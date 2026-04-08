@@ -2,6 +2,7 @@ import { getLocale, setLocale, t, subscribeLocale } from "./i18n.js";
 import { startRouter, getRoute } from "./router.js";
 import { createHeader } from "./header.js";
 import { fetchSiteConfig, installMockFetchInterceptor } from "./mockApi.js";
+import { mountSoundWave } from "./soundWave.js";
 
 installMockFetchInterceptor();
 
@@ -39,6 +40,15 @@ function renderPage(locale) {
   p.textContent = t(locale, bodyKey);
 
   box.appendChild(h1);
+  if (route === "home") {
+    const waveAnchor = document.createElement("div");
+    waveAnchor.className = "sound-wave-anchor";
+    box.appendChild(waveAnchor);
+    const cleanupWave = mountSoundWave(waveAnchor);
+    main.__waveCleanup = cleanupWave;
+  } else {
+    main.__waveCleanup = null;
+  }
   box.appendChild(p);
   main.appendChild(box);
   return main;
@@ -48,13 +58,28 @@ function mount() {
   const locale = getLocale();
   setLocale(locale);
 
-  app.replaceChildren();
+  const existingHeader = app.querySelector("header.site-header");
+  if (!existingHeader) {
+    const header = createHeader({ locale, onLocaleChange: () => mount() });
+    header.dataset.locale = locale;
+    app.prepend(header);
+  } else if (existingHeader.dataset.locale !== locale) {
+    const header = createHeader({ locale, onLocaleChange: () => mount() });
+    header.dataset.locale = locale;
+    existingHeader.replaceWith(header);
+  }
 
-  const onLocaleChange = () => mount();
+  const oldMain = app.querySelector("main.main-area");
+  if (oldMain && typeof oldMain.__waveCleanup === "function") {
+    oldMain.__waveCleanup();
+  }
 
-  const header = createHeader({ locale, onLocaleChange });
-  app.appendChild(header);
-  app.appendChild(renderPage(locale));
+  const nextMain = renderPage(locale);
+  if (oldMain) {
+    oldMain.replaceWith(nextMain);
+  } else {
+    app.appendChild(nextMain);
+  }
 
   siteConfigPromise.then((cfg) => {
     const hint = document.querySelector(".page-placeholder p");
