@@ -194,15 +194,6 @@ function mountNowPlaying(locale, mountEl) {
   const bar = document.createElement("div");
   bar.className = "now-playing__bar neo-surface neo-surface--player";
 
-  const art = document.createElement("div");
-  art.className = "now-playing__art";
-  art.setAttribute("aria-hidden", "true");
-  art.innerHTML = `<svg class="now-playing__art-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M11 4.5L5.5 9H3v6h2.5l5.5 4.5V4.5z" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/>
-    <path d="M15.5 8.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
-    <path d="M17.5 6.5a8 8 0 010 11" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
-  </svg>`;
-
   const meta = document.createElement("div");
   meta.className = "now-playing__meta";
 
@@ -223,10 +214,55 @@ function mountNowPlaying(locale, mountEl) {
   eq.className = "now-playing__eq" + (playing ? "" : " now-playing__eq--paused");
   eq.setAttribute("aria-hidden", "true");
   const barCount = 7;
+  /** @type {HTMLElement[]} */
+  const eqBars = [];
   for (let i = 0; i < barCount; i++) {
     const span = document.createElement("span");
     span.className = "now-playing__eq-bar";
     eq.appendChild(span);
+    eqBars.push(span);
+  }
+
+  const phases = eqBars.map((_, i) => i * 0.82 + 0.4 * Math.sin(i * 1.55));
+  const speeds = [1.12, 0.94, 1.26, 1.08, 1.32, 0.99, 1.18];
+  let eqRaf = 0;
+  let eqT = 0;
+  const reduceMotionEq = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function stopEqAnim() {
+    if (eqRaf) {
+      cancelAnimationFrame(eqRaf);
+      eqRaf = 0;
+    }
+    eqBars.forEach((el) => {
+      el.style.transform = "scaleY(0.1)";
+      el.style.opacity = "0.38";
+    });
+  }
+
+  function tickEq() {
+    if (!playing || reduceMotionEq) return;
+    eqT += 0.026;
+    eqBars.forEach((el, i) => {
+      const env = 0.5 + 0.5 * Math.sin(eqT * speeds[i] + phases[i]);
+      const ripple = 0.11 * Math.sin(eqT * 3.65 + i * 0.88);
+      const v = Math.min(1, Math.max(0.11, 0.13 + env * 0.8 + ripple));
+      el.style.transform = `scaleY(${v})`;
+      el.style.opacity = String(0.42 + v * 0.58);
+    });
+    eqRaf = requestAnimationFrame(tickEq);
+  }
+
+  function startEqAnim() {
+    stopEqAnim();
+    if (reduceMotionEq) {
+      eqBars.forEach((el) => {
+        el.style.transform = "scaleY(0.42)";
+        el.style.opacity = "0.82";
+      });
+      return;
+    }
+    tickEq();
   }
 
   const controls = document.createElement("div");
@@ -257,6 +293,11 @@ function mountNowPlaying(locale, mountEl) {
       playing ? t(locale, "home_player_pause_aria") : t(locale, "home_player_play_aria")
     );
     eq.classList.toggle("now-playing__eq--paused", !playing);
+    if (playing) {
+      startEqAnim();
+    } else {
+      stopEqAnim();
+    }
   }
 
   syncPlayButton();
@@ -276,7 +317,6 @@ function mountNowPlaying(locale, mountEl) {
   controls.appendChild(btnPlay);
   controls.appendChild(btnNext);
 
-  bar.appendChild(art);
   bar.appendChild(meta);
   bar.appendChild(eq);
   bar.appendChild(controls);
@@ -303,6 +343,7 @@ function mountNowPlaying(locale, mountEl) {
   });
 
   return function cleanupPlayer() {
+    stopEqAnim();
     if (root.parentNode) root.parentNode.removeChild(root);
   };
 }

@@ -3,6 +3,7 @@ import { startRouter, getRoute } from "./router.js";
 import { createHeader } from "./header.js";
 import { installMockFetchInterceptor } from "./mockApi.js";
 import { mountHomeUi } from "./homeUi.js";
+import { mountHelpPage } from "./helpPage.js";
 
 installMockFetchInterceptor();
 
@@ -18,20 +19,17 @@ function renderPage(locale) {
   box.className = route === "home" ? "home-page" : "page-placeholder";
 
   if (route === "home") {
-    const cleanupHome = mountHomeUi(locale, box);
-    main.__homeCleanup = cleanupHome;
+    main.__dispose = mountHomeUi(locale, box);
+  } else if (route === "help") {
+    main.__dispose = mountHelpPage(locale, box);
   } else {
-    main.__homeCleanup = null;
-    const titleKey =
-      route === "chat" ? "page_chat_title" : "page_help_title";
-    const bodyKey = route === "chat" ? "page_chat_body" : "page_help_body";
-
+    main.__dispose = null;
     const h1 = document.createElement("h1");
     h1.className = "page-title";
-    h1.textContent = t(locale, titleKey);
+    h1.textContent = t(locale, "page_chat_title");
 
     const p = document.createElement("p");
-    p.textContent = t(locale, bodyKey);
+    p.textContent = t(locale, "page_chat_body");
 
     box.appendChild(h1);
     box.appendChild(p);
@@ -56,8 +54,8 @@ function mount() {
   }
 
   const oldMain = app.querySelector("main.main-area");
-  if (oldMain && typeof oldMain.__homeCleanup === "function") {
-    oldMain.__homeCleanup();
+  if (oldMain && typeof oldMain.__dispose === "function") {
+    oldMain.__dispose();
   }
 
   const nextMain = renderPage(locale);

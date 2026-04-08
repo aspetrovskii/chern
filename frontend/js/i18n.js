@@ -26,6 +26,14 @@ const MESSAGES = {
     page_chat_body: "Chat screen placeholder — backend integration comes later.",
     page_help_title: "Help",
     page_help_body: "Help screen placeholder — documentation will appear here.",
+    help_support_intro:
+      "Ran into an issue? Send a message to our support team!",
+    help_field_message: "Your message",
+    help_field_email: "Email",
+    help_placeholder_message: "Describe what happened…",
+    help_placeholder_email: "name@example.com",
+    help_submit: "Send",
+    help_thanks: "Thank you! We will process your request shortly.",
   },
   ru: {
     brand: "Conce AI",
@@ -50,6 +58,14 @@ const MESSAGES = {
     page_chat_body: "Заглушка экрана чата — бэкенд подключится позже.",
     page_help_title: "Помощь",
     page_help_body: "Заглушка раздела помощи — здесь будет документация.",
+    help_support_intro:
+      "Столкнулись с проблемой? Напишите обращение в службу поддержки!",
+    help_field_message: "Текст обращения",
+    help_field_email: "Электронная почта",
+    help_placeholder_message: "Опишите проблему…",
+    help_placeholder_email: "name@example.com",
+    help_submit: "Отправить",
+    help_thanks: "Спасибо! Мы обработаем ваш запрос в ближайшее время.",
   },
   tr: {
     brand: "Conce AI",
@@ -74,6 +90,14 @@ const MESSAGES = {
     page_chat_body: "Sohbet ekranı yer tutucu — arka uç daha sonra bağlanacak.",
     page_help_title: "Yardım",
     page_help_body: "Yardım yer tutucu — belgeler burada olacak.",
+    help_support_intro:
+      "Sorun mu yaşıyorsunuz? Destek ekibimize yazın!",
+    help_field_message: "Mesajınız",
+    help_field_email: "E-posta",
+    help_placeholder_message: "Sorunu kısaca anlatın…",
+    help_placeholder_email: "ornek@posta.com",
+    help_submit: "Gönder",
+    help_thanks: "Teşekkürler! Talebinizi en kısa sürede işleme alacağız.",
   },
   hi: {
     brand: "Conce AI",
@@ -98,6 +122,14 @@ const MESSAGES = {
     page_chat_body: "चैट स्क्रीन प्लेसहोल्ड — बैकएंड बाद में जुड़ेगा।",
     page_help_title: "सहायता",
     page_help_body: "सहायता प्लेसहोल्ड — यहाँ दस्तावेज़ होंगे।",
+    help_support_intro:
+      "समस्या आई है? सहायता टीम को संदेश भेजें!",
+    help_field_message: "आपका संदेश",
+    help_field_email: "ईमेल",
+    help_placeholder_message: "समस्या का वर्णन करें…",
+    help_placeholder_email: "name@example.com",
+    help_submit: "भेजें",
+    help_thanks: "धन्यवाद! हम जल्द ही आपके अनुरोध पर कार्रवाई करेंगे।",
   },
   zh: {
     brand: "Conce AI",
@@ -120,6 +152,13 @@ const MESSAGES = {
     page_chat_body: "聊天页占位 — 后端稍后接入。",
     page_help_title: "帮助",
     page_help_body: "帮助占位 — 文档将显示于此。",
+    help_support_intro: "遇到问题？向我们的支持团队发送留言！",
+    help_field_message: "留言内容",
+    help_field_email: "电子邮箱",
+    help_placeholder_message: "请描述您遇到的问题…",
+    help_placeholder_email: "name@example.com",
+    help_submit: "发送",
+    help_thanks: "谢谢！我们会尽快处理您的请求。",
   },
 };
 

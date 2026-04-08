@@ -387,6 +387,106 @@ a.nav-btn:visited {
   line-height: 1.6;
 }
 
+.help-page {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.help-page__intro {
+  margin: 0 0 1.5rem;
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgba(238, 241, 248, 0.94);
+}
+
+.help-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.help-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.help-form__label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(220, 224, 232, 0.88);
+}
+
+.neo-glass-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  color: rgba(245, 246, 250, 0.96);
+  font: inherit;
+  font-size: 0.98rem;
+  box-shadow: var(--glass-inset), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.neo-glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.neo-glass-input:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.45);
+  box-shadow: var(--glass-inset), 0 0 0 2px rgba(129, 140, 248, 0.3);
+}
+
+.help-form__textarea {
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.help-form__actions {
+  margin-top: 0.25rem;
+}
+
+.neo-glass-btn {
+  padding: 0.65rem 1.35rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  color: rgba(240, 242, 250, 0.98);
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--glass-inset), 0 4px 18px rgba(0, 0, 0, 0.22);
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.neo-glass-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.neo-glass-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.help-page__thanks {
+  margin: 0;
+  padding: 1.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: rgba(186, 230, 253, 0.95);
+  text-align: center;
+}
+
 .sound-wave-anchor {
   width: 100%;
 }
@@ -663,28 +763,6 @@ a.nav-btn:visited {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.now-playing__art {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.55), rgba(236, 72, 153, 0.4));
-  color: rgba(255, 255, 255, 0.92);
-  box-shadow:
-    inset 2px 2px 6px rgba(0, 0, 0, 0.35),
-    3px 3px 10px rgba(0, 0, 0, 0.35);
-}
-
-.now-playing__art-svg {
-  width: 1.85rem;
-  height: 1.85rem;
-  display: block;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.25));
-}
-
 .now-playing__meta {
   flex: 1 1 auto;
   min-width: 0;
@@ -727,55 +805,14 @@ a.nav-btn:visited {
   flex-shrink: 0;
   border-radius: 99px;
   transform-origin: bottom center;
-  transform: scaleY(0.35);
+  will-change: transform, opacity;
+  transform: scaleY(0.1);
+  opacity: 0.38;
   background: linear-gradient(180deg, rgba(210, 220, 255, 0.95), rgba(99, 102, 241, 0.45));
-  box-shadow: 0 0 8px rgba(129, 140, 248, 0.25);
-  animation: eq-dance 0.62s ease-in-out infinite alternate;
-}
-
-.now-playing__eq-bar:nth-child(1) {
-  animation-delay: 0ms;
-}
-
-.now-playing__eq-bar:nth-child(2) {
-  animation-delay: 80ms;
-}
-
-.now-playing__eq-bar:nth-child(3) {
-  animation-delay: 160ms;
-}
-
-.now-playing__eq-bar:nth-child(4) {
-  animation-delay: 100ms;
-}
-
-.now-playing__eq-bar:nth-child(5) {
-  animation-delay: 200ms;
-}
-
-.now-playing__eq-bar:nth-child(6) {
-  animation-delay: 40ms;
-}
-
-.now-playing__eq-bar:nth-child(7) {
-  animation-delay: 120ms;
-}
-
-@keyframes eq-dance {
-  0% {
-    transform: scaleY(0.18);
-    opacity: 0.45;
-  }
-  100% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
+  box-shadow: 0 0 6px rgba(129, 140, 248, 0.22);
 }
 
 .now-playing__eq--paused .now-playing__eq-bar {
-  animation: none;
-  transform: scaleY(0.12);
-  opacity: 0.35;
   box-shadow: none;
 }
 
@@ -892,9 +929,4 @@ a.nav-btn:visited {
     opacity: 0.92;
   }
 
-  .now-playing__eq-bar {
-    animation: none !important;
-    transform: scaleY(0.32);
-    opacity: 0.5;
-  }
 }
