@@ -69,14 +69,23 @@ const MESSAGES = {
   },
 };
 
-/** @type {Record<Locale, { flag: string; label: string }>} */
+/**
+ * flagCode: ISO 3166-1 alpha-2 для https://flagcdn.com (фото флага)
+ * en → gb (Великобритания), hi → in (Индия), zh → cn (КНР)
+ */
+/** @type {Record<Locale, { flagCode: string; label: string }>} */
 export const LOCALE_META = {
-  ru: { flag: "🇷🇺", label: "Русский" },
-  en: { flag: "🇬🇧", label: "English" },
-  tr: { flag: "🇹🇷", label: "Türkçe" },
-  hi: { flag: "🇮🇳", label: "हिन्दी" },
-  zh: { flag: "🇨🇳", label: "中文" },
+  ru: { flagCode: "ru", label: "Русский" },
+  en: { flagCode: "gb", label: "English" },
+  tr: { flagCode: "tr", label: "Türkçe" },
+  hi: { flagCode: "in", label: "हिन्दी" },
+  zh: { flagCode: "cn", label: "中文" },
 };
+
+/** @param {string} flagCode @param {number} [w] */
+export function flagImageUrl(flagCode, w = 40) {
+  return `https://flagcdn.com/w${w}/${flagCode.toLowerCase()}.png`;
+}
 
 /** @returns {Locale} */
 export function getLocale() {

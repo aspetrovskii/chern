@@ -1,5 +1,4 @@
-import { LOCALE_META, getLocale, setLocale, t, notifyLocaleChange } from "./i18n.js";
-import { navigate } from "./router.js";
+import { LOCALE_META, flagImageUrl, setLocale, t, notifyLocaleChange } from "./i18n.js";
 
 /** @typedef {import('./i18n.js').Locale} Locale */
 
@@ -16,7 +15,15 @@ function createLangDropdown(locale, onChange) {
 
   const meta = LOCALE_META[locale];
   btn.setAttribute("aria-label", `${t(locale, "lang_label")}: ${meta.label}`);
-  btn.innerHTML = `<span class="lang-option__flag lang-option__flag--solo" aria-hidden="true">${meta.flag}</span><span class="nav-btn__chev" aria-hidden="true">▾</span>`;
+  const btnFlagSrc = flagImageUrl(meta.flagCode, 40);
+  const btnFlagSrc2x = flagImageUrl(meta.flagCode, 80);
+  btn.innerHTML = `
+    <span class="lang-btn__row">
+      <img class="lang-flag-img" src="${btnFlagSrc}" srcset="${btnFlagSrc2x} 2x" width="32" height="24" alt="" decoding="async" loading="eager" />
+      <span class="lang-btn__label nav-text">${meta.label}</span>
+    </span>
+    <span class="nav-btn__chev" aria-hidden="true">▾</span>
+  `;
 
   const panel = document.createElement("div");
   panel.className = "lang-dropdown__panel";
@@ -33,7 +40,12 @@ function createLangDropdown(locale, onChange) {
     opt.setAttribute("aria-selected", code === locale ? "true" : "false");
     const m = LOCALE_META[code];
     opt.setAttribute("aria-label", m.label);
-    opt.innerHTML = `<span class="lang-option__flag lang-option__flag--solo" aria-hidden="true">${m.flag}</span>`;
+    const src = flagImageUrl(m.flagCode, 40);
+    const src2 = flagImageUrl(m.flagCode, 80);
+    opt.innerHTML = `
+      <img class="lang-flag-img" src="${src}" srcset="${src2} 2x" width="36" height="27" alt="" decoding="async" />
+      <span class="lang-option__label">${m.label}</span>
+    `;
     opt.addEventListener("click", () => {
       setLocale(code);
       notifyLocaleChange();

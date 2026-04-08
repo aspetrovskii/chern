@@ -154,7 +154,31 @@ body {
 
 .nav-btn--lang {
   min-width: auto;
-  padding-inline: 0.5rem;
+  max-width: 14rem;
+  padding-inline: 0.35rem 0.45rem;
+}
+
+.lang-btn__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lang-btn__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 9rem;
+}
+
+.lang-flag-img {
+  display: block;
+  width: 2rem;
+  height: 1.5rem;
+  object-fit: cover;
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .nav-btn__chev {
@@ -171,7 +195,7 @@ body {
   position: absolute;
   right: 0;
   top: calc(100% + 0.45rem);
-  min-width: 3.25rem;
+  min-width: 11rem;
   padding: 0.25rem;
   border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -190,16 +214,17 @@ body {
 .lang-option {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 0.55rem;
   width: 100%;
-  padding: 0.45rem 0.5rem;
+  padding: 0.45rem 0.55rem;
   border: none;
   border-radius: 0;
   background: transparent;
   color: inherit;
   font: inherit;
   font-size: 0.92rem;
-  text-align: center;
+  text-align: left;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -242,20 +267,24 @@ body {
   background: rgba(59, 130, 246, 0.08);
 }
 
-.lang-option__flag {
-  font-size: 1.35rem;
-  line-height: 1;
+.lang-option .lang-flag-img {
   position: relative;
   z-index: 1;
+  width: 2.25rem;
+  height: 1.6875rem;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.lang-option:hover .lang-option__flag {
-  transform: scale(1.12) rotate(-4deg);
+.lang-option__label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(232, 234, 239, 0.92);
 }
 
-.lang-option__flag--solo {
-  font-size: 1.4rem;
+.lang-option:hover .lang-flag-img {
+  transform: scale(1.08) rotate(-3deg);
 }
 
 .main-area {
@@ -304,7 +333,7 @@ body {
 
   .lang-option,
   .lang-option::before,
-  .lang-option__flag {
+  .lang-option .lang-flag-img {
     transition: none;
   }
 
@@ -313,7 +342,7 @@ body {
     filter: none;
   }
 
-  .lang-option:hover .lang-option__flag {
+  .lang-option:hover .lang-flag-img {
     transform: none;
   }
 }
