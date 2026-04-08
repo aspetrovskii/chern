@@ -194,6 +194,15 @@ function mountNowPlaying(locale, mountEl) {
   const bar = document.createElement("div");
   bar.className = "now-playing__bar neo-surface neo-surface--player";
 
+  const cover = document.createElement("img");
+  cover.className = "now-playing__cover";
+  cover.src = "https://picsum.photos/seed/conce-midnight-bloom/112/112";
+  cover.alt = "";
+  cover.width = 112;
+  cover.height = 112;
+  cover.decoding = "async";
+  cover.loading = "lazy";
+
   const meta = document.createElement("div");
   meta.className = "now-playing__meta";
 
@@ -317,6 +326,7 @@ function mountNowPlaying(locale, mountEl) {
   controls.appendChild(btnPlay);
   controls.appendChild(btnNext);
 
+  bar.appendChild(cover);
   bar.appendChild(meta);
   bar.appendChild(eq);
   bar.appendChild(controls);

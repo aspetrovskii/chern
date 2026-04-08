@@ -4,6 +4,7 @@ import { createHeader } from "./header.js";
 import { installMockFetchInterceptor } from "./mockApi.js";
 import { mountHomeUi } from "./homeUi.js";
 import { mountHelpPage } from "./helpPage.js";
+import { mountAuthPage } from "./authPage.js";
 
 installMockFetchInterceptor();
 
@@ -13,15 +14,27 @@ if (!app) throw new Error("#app missing");
 function renderPage(locale) {
   const route = getRoute();
   const main = document.createElement("main");
-  main.className = route === "home" ? "main-area main-area--home" : "main-area";
+  main.className =
+    route === "home"
+      ? "main-area main-area--home"
+      : route === "auth"
+        ? "main-area main-area--auth"
+        : "main-area";
 
   const box = document.createElement("div");
-  box.className = route === "home" ? "home-page" : "page-placeholder";
+  box.className =
+    route === "home"
+      ? "home-page"
+      : route === "auth"
+        ? "auth-page-root"
+        : "page-placeholder";
 
   if (route === "home") {
     main.__dispose = mountHomeUi(locale, box);
   } else if (route === "help") {
     main.__dispose = mountHelpPage(locale, box);
+  } else if (route === "auth") {
+    main.__dispose = mountAuthPage(locale, box);
   } else {
     main.__dispose = null;
     const h1 = document.createElement("h1");
@@ -43,14 +56,16 @@ function mount() {
   setLocale(locale);
 
   const existingHeader = app.querySelector("header.site-header");
-  if (!existingHeader) {
-    const header = createHeader({ locale, onLocaleChange: () => mount() });
-    header.dataset.locale = locale;
-    app.prepend(header);
-  } else if (existingHeader.dataset.locale !== locale) {
-    const header = createHeader({ locale, onLocaleChange: () => mount() });
-    header.dataset.locale = locale;
+  const header = createHeader({
+    locale,
+    onLocaleChange: () => mount(),
+    onAuthChange: () => mount(),
+  });
+  header.dataset.locale = locale;
+  if (existingHeader) {
     existingHeader.replaceWith(header);
+  } else {
+    app.prepend(header);
   }
 
   const oldMain = app.querySelector("main.main-area");

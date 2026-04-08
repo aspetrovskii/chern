@@ -1,9 +1,10 @@
-/** @typedef {'home'|'chat'|'help'} RouteName */
+/** @typedef {'home'|'chat'|'help'|'auth'} RouteName */
 
 const ROUTES = /** @type {const} */ ({
   home: "",
   chat: "chat",
   help: "help",
+  auth: "auth",
 });
 
 function parseHash() {
@@ -11,6 +12,7 @@ function parseHash() {
   const segment = raw.split("/")[0] || "";
   if (segment === ROUTES.chat) return "chat";
   if (segment === ROUTES.help) return "help";
+  if (segment === ROUTES.auth) return "auth";
   return "home";
 }
 

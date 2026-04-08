@@ -1,4 +1,5 @@
 import { LOCALE_META, flagImageUrl, setLocale, t, notifyLocaleChange } from "./i18n.js";
+import { getSessionUser, logoutUser } from "./auth.js";
 
 /** @typedef {import('./i18n.js').Locale} Locale */
 
@@ -83,9 +84,9 @@ function createLangDropdown(locale, onChange) {
 }
 
 /**
- * @param {{ locale: Locale; onLocaleChange: () => void }} props
+ * @param {{ locale: Locale; onLocaleChange: () => void; onAuthChange?: () => void }} props
  */
-export function createHeader({ locale, onLocaleChange }) {
+export function createHeader({ locale, onLocaleChange, onAuthChange }) {
   const header = document.createElement("header");
   header.className = "site-header";
 
@@ -100,6 +101,35 @@ export function createHeader({ locale, onLocaleChange }) {
   nav.setAttribute("aria-label", "Main");
 
   const lang = createLangDropdown(locale, onLocaleChange);
+
+  const session = getSessionUser();
+
+  if (session) {
+    const userLabel = document.createElement("span");
+    userLabel.className = "nav-user-label";
+    const display = session.login || session.email;
+    userLabel.textContent =
+      display.length > 22 ? `${display.slice(0, 20)}…` : display;
+    userLabel.title = session.email;
+
+    const signOut = document.createElement("button");
+    signOut.type = "button";
+    signOut.className = "nav-btn";
+    signOut.innerHTML = `<span class="nav-text">${t(locale, "nav_sign_out")}</span>`;
+    signOut.addEventListener("click", () => {
+      logoutUser();
+      onAuthChange?.();
+    });
+
+    nav.appendChild(userLabel);
+    nav.appendChild(signOut);
+  } else {
+    const signIn = document.createElement("a");
+    signIn.className = "nav-btn";
+    signIn.href = "#/auth";
+    signIn.innerHTML = `<span class="nav-text">${t(locale, "nav_sign_in")}</span>`;
+    nav.appendChild(signIn);
+  }
 
   const chat = document.createElement("a");
   chat.className = "nav-btn";

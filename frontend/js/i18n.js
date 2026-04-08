@@ -34,6 +34,33 @@ const MESSAGES = {
     help_placeholder_email: "name@example.com",
     help_submit: "Send",
     help_thanks: "Thank you! We will process your request shortly.",
+    nav_sign_in: "Sign in",
+    nav_sign_out: "Sign out",
+    auth_title_login: "Sign in",
+    auth_title_register: "Create account",
+    auth_tab_login: "Sign in",
+    auth_tab_register: "Register",
+    auth_identifier_label: "Username or email",
+    auth_username: "Username",
+    auth_placeholder_identifier: "Your login or email",
+    auth_placeholder_username: "letters, numbers, _ . -",
+    auth_email: "Email",
+    auth_password: "Password",
+    auth_password_confirm: "Confirm password",
+    auth_submit: "Continue",
+    auth_back_home: "← Back to home",
+    auth_err_turnstile: "Complete the Cloudflare security check.",
+    auth_err_turnstile_load: "Could not load the security check. Refresh the page.",
+    auth_err_required_login: "Enter username or email and password.",
+    auth_err_required_register: "Fill in username, email, and password.",
+    auth_err_mismatch: "Passwords do not match.",
+    auth_err_exists_email: "This email is already registered.",
+    auth_err_exists_login: "This username is taken.",
+    auth_err_invalid_login:
+      "Username: 2–32 characters — letters, numbers, underscore, dot, hyphen.",
+    auth_err_invalid_email: "Enter a valid email address.",
+    auth_err_login: "Invalid username/email or password.",
+    auth_err_generic: "Something went wrong. Try again.",
   },
   ru: {
     brand: "Conce AI",
@@ -66,6 +93,33 @@ const MESSAGES = {
     help_placeholder_email: "name@example.com",
     help_submit: "Отправить",
     help_thanks: "Спасибо! Мы обработаем ваш запрос в ближайшее время.",
+    nav_sign_in: "Войти",
+    nav_sign_out: "Выйти",
+    auth_title_login: "Вход",
+    auth_title_register: "Регистрация",
+    auth_tab_login: "Вход",
+    auth_tab_register: "Регистрация",
+    auth_identifier_label: "Логин или почта",
+    auth_username: "Логин",
+    auth_placeholder_identifier: "Логин или email",
+    auth_placeholder_username: "буквы, цифры, _ . -",
+    auth_email: "Электронная почта",
+    auth_password: "Пароль",
+    auth_password_confirm: "Повторите пароль",
+    auth_submit: "Продолжить",
+    auth_back_home: "← На главную",
+    auth_err_turnstile: "Пройдите проверку Cloudflare.",
+    auth_err_turnstile_load: "Не удалось загрузить проверку. Обновите страницу.",
+    auth_err_required_login: "Введите логин или почту и пароль.",
+    auth_err_required_register: "Заполните логин, почту и пароль.",
+    auth_err_mismatch: "Пароли не совпадают.",
+    auth_err_exists_email: "Эта почта уже зарегистрирована.",
+    auth_err_exists_login: "Этот логин занят.",
+    auth_err_invalid_login:
+      "Логин: 2–32 символа — латиница, цифры, _, точка, дефис.",
+    auth_err_invalid_email: "Укажите корректный email.",
+    auth_err_login: "Неверный логин/почта или пароль.",
+    auth_err_generic: "Не получилось. Попробуйте снова.",
   },
   tr: {
     brand: "Conce AI",
@@ -98,6 +152,33 @@ const MESSAGES = {
     help_placeholder_email: "ornek@posta.com",
     help_submit: "Gönder",
     help_thanks: "Teşekkürler! Talebinizi en kısa sürede işleme alacağız.",
+    nav_sign_in: "Giriş",
+    nav_sign_out: "Çıkış",
+    auth_title_login: "Giriş",
+    auth_title_register: "Kayıt ol",
+    auth_tab_login: "Giriş",
+    auth_tab_register: "Kayıt",
+    auth_identifier_label: "Kullanıcı adı veya e-posta",
+    auth_username: "Kullanıcı adı",
+    auth_placeholder_identifier: "Kullanıcı adı veya e-posta",
+    auth_placeholder_username: "harf, rakam, _ . -",
+    auth_email: "E-posta",
+    auth_password: "Şifre",
+    auth_password_confirm: "Şifre (tekrar)",
+    auth_submit: "Devam",
+    auth_back_home: "← Ana sayfa",
+    auth_err_turnstile: "Cloudflare güvenlik doğrulamasını tamamlayın.",
+    auth_err_turnstile_load: "Güvenlik yüklenemedi. Sayfayı yenileyin.",
+    auth_err_required_login: "Kullanıcı adı veya e-posta ve şifre girin.",
+    auth_err_required_register: "Kullanıcı adı, e-posta ve şifreyi doldurun.",
+    auth_err_mismatch: "Şifreler eşleşmiyor.",
+    auth_err_exists_email: "Bu e-posta zaten kayıtlı.",
+    auth_err_exists_login: "Bu kullanıcı adı alınmış.",
+    auth_err_invalid_login:
+      "Kullanıcı adı: 2–32 karakter; harf, rakam, _, ., -",
+    auth_err_invalid_email: "Geçerli bir e-posta girin.",
+    auth_err_login: "Kullanıcı adı/e-posta veya şifre hatalı.",
+    auth_err_generic: "Bir sorun oldu. Tekrar deneyin.",
   },
   hi: {
     brand: "Conce AI",
@@ -130,6 +211,33 @@ const MESSAGES = {
     help_placeholder_email: "name@example.com",
     help_submit: "भेजें",
     help_thanks: "धन्यवाद! हम जल्द ही आपके अनुरोध पर कार्रवाई करेंगे।",
+    nav_sign_in: "साइन इन",
+    nav_sign_out: "साइन आउट",
+    auth_title_login: "साइन इन",
+    auth_title_register: "खाता बनाएँ",
+    auth_tab_login: "साइन इन",
+    auth_tab_register: "रजिस्टर",
+    auth_identifier_label: "यूज़रनेम या ईमेल",
+    auth_username: "यूज़रनेम",
+    auth_placeholder_identifier: "लॉगिन या ईमेल",
+    auth_placeholder_username: "अक्षर, अंक, _ . -",
+    auth_email: "ईमेल",
+    auth_password: "पासवर्ड",
+    auth_password_confirm: "पासवर्ड फिर से",
+    auth_submit: "आगे बढ़ें",
+    auth_back_home: "← होम पर लौटें",
+    auth_err_turnstile: "Cloudflare सुरक्षा जाँच पूरी करें।",
+    auth_err_turnstile_load: "सुरक्षा लोड नहीं हो सकी। पृष्ठ रिफ़्रेश करें।",
+    auth_err_required_login: "यूज़रनेम या ईमेल और पासवर्ड दर्ज करें।",
+    auth_err_required_register: "यूज़रनेम, ईमेल और पासवर्ड भरें।",
+    auth_err_mismatch: "पासवर्ड मेल नहीं खाते।",
+    auth_err_exists_email: "यह ईमेल पहले से पंजीकृत है।",
+    auth_err_exists_login: "यह यूज़रनेम लिया हुआ है।",
+    auth_err_invalid_login:
+      "यूज़रनेम: 2–32 वर्ण — अंग्रेज़ी अक्षर, अंक, _, ., -",
+    auth_err_invalid_email: "वैध ईमेल दर्ज करें।",
+    auth_err_login: "यूज़रनेम/ईमेल या पासवर्ड गलत है।",
+    auth_err_generic: "कुछ गलत हुआ। फिर कोशिश करें।",
   },
   zh: {
     brand: "Conce AI",
@@ -159,6 +267,32 @@ const MESSAGES = {
     help_placeholder_email: "name@example.com",
     help_submit: "发送",
     help_thanks: "谢谢！我们会尽快处理您的请求。",
+    nav_sign_in: "登录",
+    nav_sign_out: "退出",
+    auth_title_login: "登录",
+    auth_title_register: "注册账号",
+    auth_tab_login: "登录",
+    auth_tab_register: "注册",
+    auth_identifier_label: "用户名或邮箱",
+    auth_username: "用户名",
+    auth_placeholder_identifier: "登录名或邮箱",
+    auth_placeholder_username: "字母、数字、_ . -",
+    auth_email: "电子邮箱",
+    auth_password: "密码",
+    auth_password_confirm: "确认密码",
+    auth_submit: "继续",
+    auth_back_home: "← 返回首页",
+    auth_err_turnstile: "请完成 Cloudflare 人机验证。",
+    auth_err_turnstile_load: "安全验证加载失败，请刷新页面。",
+    auth_err_required_login: "请输入用户名或邮箱和密码。",
+    auth_err_required_register: "请填写用户名、邮箱和密码。",
+    auth_err_mismatch: "两次密码不一致。",
+    auth_err_exists_email: "该邮箱已注册。",
+    auth_err_exists_login: "该用户名已被占用。",
+    auth_err_invalid_login: "用户名：2–32 个字符，可使用字母、数字、_ . -",
+    auth_err_invalid_email: "请输入有效的邮箱地址。",
+    auth_err_login: "用户名/邮箱或密码错误。",
+    auth_err_generic: "出错了，请重试。",
   },
 };
 
@@ -199,10 +333,20 @@ export function setLocale(locale) {
   document.documentElement.lang = locale === "zh" ? "zh-CN" : locale;
 }
 
-/** @param {Locale} locale */
-export function t(locale, key) {
+/**
+ * @param {Locale} locale
+ * @param {string} key
+ * @param {Record<string, string | number>} [vars]
+ */
+export function t(locale, key, vars) {
   const table = MESSAGES[locale] || MESSAGES.en;
-  return table[key] ?? MESSAGES.en[key] ?? key;
+  let s = table[key] ?? MESSAGES.en[key] ?? key;
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      s = s.split(`{${k}}`).join(String(v));
+    }
+  }
+  return s;
 }
 
 export function subscribeLocale(callback) {
