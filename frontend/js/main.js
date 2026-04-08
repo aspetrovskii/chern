@@ -32,7 +32,8 @@ function renderPage(locale) {
         : "page_home_body";
 
   const h1 = document.createElement("h1");
-  h1.innerHTML = `<span class="text-brand">${t(locale, titleKey)}</span>`;
+  h1.className = "page-title";
+  h1.textContent = t(locale, titleKey);
 
   const p = document.createElement("p");
   p.textContent = t(locale, bodyKey);

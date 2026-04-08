@@ -15,7 +15,8 @@ function createLangDropdown(locale, onChange) {
   btn.setAttribute("aria-expanded", "false");
 
   const meta = LOCALE_META[locale];
-  btn.innerHTML = `<span class="lang-option__flag" aria-hidden="true">${meta.flag}</span><span class="text-brand">${meta.label}</span><span class="nav-btn__chev" aria-hidden="true">▾</span>`;
+  btn.setAttribute("aria-label", `${t(locale, "lang_label")}: ${meta.label}`);
+  btn.innerHTML = `<span class="lang-option__flag lang-option__flag--solo" aria-hidden="true">${meta.flag}</span><span class="nav-btn__chev" aria-hidden="true">▾</span>`;
 
   const panel = document.createElement("div");
   panel.className = "lang-dropdown__panel";
@@ -31,7 +32,8 @@ function createLangDropdown(locale, onChange) {
     opt.setAttribute("role", "option");
     opt.setAttribute("aria-selected", code === locale ? "true" : "false");
     const m = LOCALE_META[code];
-    opt.innerHTML = `<span class="lang-option__flag" aria-hidden="true">${m.flag}</span><span class="text-brand">${m.label}</span>`;
+    opt.setAttribute("aria-label", m.label);
+    opt.innerHTML = `<span class="lang-option__flag lang-option__flag--solo" aria-hidden="true">${m.flag}</span>`;
     opt.addEventListener("click", () => {
       setLocale(code);
       notifyLocaleChange();
@@ -79,7 +81,7 @@ export function createHeader({ locale, onLocaleChange }) {
   brand.className = "site-header__brand";
   brand.href = "#/";
   brand.setAttribute("aria-label", t(locale, "brand"));
-  brand.innerHTML = `<span class="text-brand">${t(locale, "brand")}</span>`;
+  brand.innerHTML = `<span class="logo-text">${t(locale, "brand")}</span>`;
 
   const nav = document.createElement("nav");
   nav.className = "site-header__nav";
@@ -90,16 +92,16 @@ export function createHeader({ locale, onLocaleChange }) {
   const chat = document.createElement("a");
   chat.className = "nav-btn";
   chat.href = "#/chat";
-  chat.innerHTML = `<span class="text-brand">${t(locale, "nav_chat")}</span>`;
+  chat.innerHTML = `<span class="nav-text">${t(locale, "nav_chat")}</span>`;
 
   const help = document.createElement("a");
   help.className = "nav-btn";
   help.href = "#/help";
-  help.innerHTML = `<span class="text-brand">${t(locale, "nav_help")}</span>`;
+  help.innerHTML = `<span class="nav-text">${t(locale, "nav_help")}</span>`;
 
-  nav.appendChild(lang);
   nav.appendChild(chat);
   nav.appendChild(help);
+  nav.appendChild(lang);
 
   header.appendChild(brand);
   header.appendChild(nav);
