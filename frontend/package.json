@@ -1,0 +1,13 @@
+{
+  "name": "conce-ai-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "serve -l 8765",
+    "start": "serve -l 8765"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
