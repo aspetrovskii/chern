@@ -1,6 +1,6 @@
 # Minimal static file server for local preview (no Node required).
 param(
-  [int]$Port = 8765,
+  [int]$Port = 5174,
   [string]$Root = $PSScriptRoot
 )
 

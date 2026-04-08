@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "serve -l 8765",
-    "start": "serve -l 8765"
+    "dev": "node ./node_modules/serve/build/main.js -l 5174 --no-clipboard",
+    "start": "node ./node_modules/serve/build/main.js -l 5174 --no-clipboard"
   },
   "devDependencies": {
     "serve": "^14.2.4"
