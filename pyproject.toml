@@ -1,0 +1,6 @@
+[project]
+name = "concert-playlist-llm"
+version = "0.1.0"
+description = "LLM backend module for intent parsing and track tagging"
+requires-python = ">=3.11"
+dependencies = []
