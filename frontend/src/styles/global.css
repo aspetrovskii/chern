@@ -1,0 +1,140 @@
+:root {
+  --bg-base: #0a0a0c;
+  --bg-elevated: #121216;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --accent-glow: rgba(59, 130, 246, 0.35);
+  --font-ui: "Outfit", system-ui, sans-serif;
+  --neo-surface: #131318;
+  --neo-shadow-dark: rgba(0, 0, 0, 0.55);
+  --neo-shadow-light: rgba(255, 255, 255, 0.045);
+  --neo-radius: 20px;
+  --glass-bg: rgba(22, 24, 32, 0.42);
+  --glass-bg-strong: rgba(16, 18, 26, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-soft: rgba(255, 255, 255, 0.08);
+  --glass-blur: 18px;
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: #080809;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font-ui);
+  color: #e8eaef;
+}
+
+body {
+  position: relative;
+  isolation: isolate;
+  background-color: #080809;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  inset: -18%;
+  z-index: 0;
+}
+
+body::before {
+  background:
+    radial-gradient(ellipse 100% 85% at 18% 12%, rgba(99, 102, 241, 0.42), transparent 56%),
+    radial-gradient(ellipse 95% 75% at 88% 22%, rgba(14, 165, 233, 0.34), transparent 54%),
+    radial-gradient(ellipse 75% 65% at 48% 92%, rgba(236, 72, 153, 0.3), transparent 60%);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: 165% 165%, 150% 150%, 140% 140%;
+  background-position: 20% 30%, 75% 20%, 50% 85%;
+  animation: bg-bloom-a 22s ease-in-out infinite alternate;
+  filter: hue-rotate(0deg) saturate(1.08);
+  will-change: transform, filter, background-position, opacity;
+}
+
+body::after {
+  background:
+    radial-gradient(ellipse 85% 55% at 78% 78%, rgba(168, 85, 247, 0.32), transparent 52%),
+    radial-gradient(ellipse 65% 50% at 10% 58%, rgba(59, 130, 246, 0.26), transparent 50%),
+    radial-gradient(ellipse 55% 40% at 55% 35%, rgba(34, 211, 238, 0.18), transparent 48%);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: 155% 155%, 145% 145%, 130% 130%;
+  background-position: 70% 65%, 15% 45%, 45% 25%;
+  mix-blend-mode: screen;
+  opacity: 0.88;
+  animation: bg-bloom-b 28s ease-in-out infinite alternate;
+  filter: hue-rotate(8deg) saturate(1.12);
+  will-change: transform, filter, background-position, opacity;
+}
+
+@keyframes bg-bloom-a {
+  0% {
+    transform: translate(-4%, 3%) scale(1.04) rotate(-4deg);
+    background-position: 12% 22%, 82% 18%, 42% 88%;
+    filter: hue-rotate(-18deg) saturate(1.05);
+    opacity: 0.82;
+  }
+  50% {
+    filter: hue-rotate(12deg) saturate(1.28);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(10%, -12%) scale(1.2) rotate(12deg);
+    background-position: 68% 78%, 18% 72%, 58% 12%;
+    filter: hue-rotate(38deg) saturate(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes bg-bloom-b {
+  0% {
+    transform: translate(2%, 8%) scale(1.03) rotate(2deg);
+    background-position: 65% 70%, 8% 52%, 48% 18%;
+    filter: hue-rotate(0deg) saturate(1.1);
+    opacity: 0.75;
+  }
+  50% {
+    filter: hue-rotate(22deg) saturate(1.35);
+  }
+  100% {
+    transform: translate(-12%, -8%) scale(1.22) rotate(-8deg);
+    background-position: 22% 28%, 88% 38%, 52% 82%;
+    filter: hue-rotate(-14deg) saturate(1.2);
+    opacity: 0.92;
+  }
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation: none !important;
+  }
+
+  body::before {
+    transform: none;
+    opacity: 0.92;
+  }
+
+  body::after {
+    transform: none;
+  }
+}
