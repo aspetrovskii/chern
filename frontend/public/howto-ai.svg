@@ -1,0 +1,56 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg3" x1="90" y1="45" x2="720" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#121426"/>
+      <stop offset="1" stop-color="#281432"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(395 224) rotate(90) scale(122)">
+      <stop stop-color="#FDE047"/>
+      <stop offset="0.35" stop-color="#EC4899"/>
+      <stop offset="0.72" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </radialGradient>
+    <linearGradient id="line" x1="188" y1="70" x2="618" y2="356" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="0.5" stop-color="#EC4899"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="784" height="434" rx="26" fill="url(#bg3)" stroke="rgba(255,255,255,0.24)"/>
+  <ellipse cx="138" cy="86" rx="112" ry="66" fill="#4F46E5" fill-opacity="0.35">
+    <animate attributeName="cx" values="138;154;138" dur="8.5s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="676" cy="360" rx="126" ry="76" fill="#EC4899" fill-opacity="0.28">
+    <animate attributeName="cx" values="676;660;676" dur="9.3s" repeatCount="indefinite"/>
+  </ellipse>
+  <circle cx="396" cy="225" r="118" fill="url(#core)" fill-opacity="0.88">
+    <animate attributeName="r" values="118;126;118" dur="3.2s" repeatCount="indefinite"/>
+    <animate attributeName="fill-opacity" values="0.88;0.98;0.88" dur="3.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="396" cy="225" r="92" fill="#111827" fill-opacity="0.58">
+    <animate attributeName="fill-opacity" values="0.58;0.42;0.58" dur="2.1s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="396" cy="225" r="74" stroke="rgba(255,255,255,0.32)" stroke-width="2">
+    <animateTransform attributeName="transform" type="rotate" values="0 396 225;360 396 225" dur="20s" repeatCount="indefinite"/>
+  </circle>
+  <path d="M255 156C287 124 334 106 396 106C458 106 508 127 540 158" stroke="url(#line)" stroke-width="4" stroke-linecap="round">
+    <animate attributeName="stroke-opacity" values="0.55;1;0.55" dur="2.4s" repeatCount="indefinite"/>
+  </path>
+  <path d="M255 292C287 324 334 342 396 342C458 342 508 321 540 290" stroke="url(#line)" stroke-width="4" stroke-linecap="round">
+    <animate attributeName="stroke-opacity" values="1;0.55;1" dur="2.4s" repeatCount="indefinite"/>
+  </path>
+  <path d="M198 226H290M502 226H602" stroke="url(#line)" stroke-width="4" stroke-linecap="round">
+    <animate attributeName="stroke-opacity" values="0.3;1;0.3" dur="1.7s" repeatCount="indefinite"/>
+  </path>
+  <rect x="112" y="176" width="98" height="62" rx="14" fill="rgba(15,23,42,0.65)" stroke="rgba(255,255,255,0.26)">
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 -5;0 0" dur="2.5s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="592" y="176" width="98" height="62" rx="14" fill="rgba(15,23,42,0.65)" stroke="rgba(255,255,255,0.26)">
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 5;0 0" dur="2.5s" repeatCount="indefinite"/>
+  </rect>
+  <path d="M148 206C158 194 168 194 178 206" stroke="#93C5FD" stroke-width="3" stroke-linecap="round"/>
+  <path d="M628 206C638 194 648 194 658 206" stroke="#F9A8D4" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="396" cy="225" r="12" fill="#E2E8F0" fill-opacity="0.9">
+    <animate attributeName="r" values="12;7;12" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+</svg>

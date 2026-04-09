@@ -4,7 +4,6 @@ import { t, type Locale } from "../../lib/i18n";
 import brandStyles from "../BrandText.module.css";
 import neoStyles from "../NeoSurface.module.css";
 import homeStyles from "./HomePage.module.css";
-import { NowPlaying } from "./NowPlaying";
 
 const PLACEHOLDER_PROMPTS: Record<Locale, string[]> = {
   en: [
@@ -44,12 +43,30 @@ const PLACEHOLDER_PROMPTS: Record<Locale, string[]> = {
   ],
 };
 
-type HomePageProps = {
-  locale: Locale;
-  onPlayerCollapsedChange: (collapsed: boolean) => void;
-};
+type HomePageProps = { locale: Locale };
 
-export function HomePage({ locale, onPlayerCollapsedChange }: HomePageProps) {
+const HOW_TO_ITEMS = [
+  {
+    titleKey: "home_howto_listen_title",
+    descKey: "home_howto_listen_desc",
+    image: "howto-listen.svg",
+    gradientAi: false,
+  },
+  {
+    titleKey: "home_howto_playlist_title",
+    descKey: "home_howto_playlist_desc",
+    image: "howto-playlists.svg",
+    gradientAi: false,
+  },
+  {
+    titleKey: "home_howto_ai_title",
+    descKey: "home_howto_ai_desc",
+    image: "howto-ai.svg",
+    gradientAi: true,
+  },
+] as const;
+
+export function HomePage({ locale }: HomePageProps) {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
   const [ghost, setGhost] = useState("");
@@ -110,11 +127,6 @@ export function HomePage({ locale, onPlayerCollapsedChange }: HomePageProps) {
       <div className={homeStyles["home-shell"]}>
         <section className={`${neoStyles["neo-surface"]} ${neoStyles["neo-surface--hero"]}`}>
           <p className={homeStyles["home-hero__lead"]}>{t(locale, "home_hero_lead")}</p>
-          <div className={homeStyles["home-input-brand"]}>
-            <span className={`${brandStyles["logo-text"]} ${homeStyles["home-input-brand__logo"]}`}>
-              {t(locale, "brand")}
-            </span>
-          </div>
           <div className={homeStyles["home-input-wrap"]}>
             <div className={homeStyles["home-input-field"]}>
               <span
@@ -167,9 +179,38 @@ export function HomePage({ locale, onPlayerCollapsedChange }: HomePageProps) {
             </button>
           </div>
         </section>
-        <div className={homeStyles["home-player-mount"]}>
-          <NowPlaying locale={locale} onCollapsedChange={onPlayerCollapsedChange} />
-        </div>
+        <section className={`${neoStyles["neo-surface"]} ${homeStyles["home-howto"]}`}>
+          <h2 className={homeStyles["home-howto__title"]}>{t(locale, "home_howto_title")}</h2>
+          <div className={homeStyles["home-howto__list"]}>
+            {HOW_TO_ITEMS.map((item) => (
+              <article key={item.titleKey} className={homeStyles["home-howto__item"]}>
+                <img
+                  className={homeStyles["home-howto__image"]}
+                  src={`${import.meta.env.BASE_URL}${item.image}`}
+                  alt=""
+                  width={260}
+                  height={146}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div className={homeStyles["home-howto__copy"]}>
+                  <p className={homeStyles["home-howto__text"]}>
+                    {item.gradientAi ? (
+                      <>
+                        {t(locale, "home_howto_ai_prefix")}
+                        <span className={brandStyles["logo-text"]}>AI</span>
+                        {t(locale, "home_howto_ai_suffix")}
+                      </>
+                    ) : (
+                      t(locale, item.titleKey)
+                    )}
+                  </p>
+                  <p className={homeStyles["home-howto__desc"]}>{t(locale, item.descKey)}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

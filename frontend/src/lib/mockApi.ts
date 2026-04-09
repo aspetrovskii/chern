@@ -14,7 +14,7 @@ export type SiteConfig = {
 export async function fetchSiteConfig(): Promise<SiteConfig> {
   await delay(LATENCY_MS);
   return {
-    appName: "Conce AI",
+    appName: "Conce Music AI",
     version: "0.1.0-mock",
     env: "mock",
     features: ["i18n", "routing", "header"],

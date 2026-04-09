@@ -7,6 +7,7 @@ import { HomePage } from "./components/Home/HomePage";
 import { HelpPage } from "./components/Help/HelpPage";
 import { AuthPage } from "./components/Auth/AuthPage";
 import { ChatPlaceholder } from "./components/ChatPlaceholder";
+import { NowPlaying } from "./components/Home/NowPlaying";
 import layoutStyles from "./components/MainLayout.module.css";
 
 const PLAYER_COLLAPSE_KEY = "conce-home-player-collapsed";
@@ -38,13 +39,12 @@ function AppRoutes() {
   }, []);
 
   const path = location.pathname;
-  const isHome = path === "/" || path === "";
   const isAuth = path === "/auth";
 
   const mainClass = [
     layoutStyles["main-area"],
-    isHome ? layoutStyles["main-area--home"] : "",
-    isHome && playerCollapsed ? layoutStyles["main-area--home-collapsed"] : "",
+    layoutStyles["main-area--with-player"],
+    playerCollapsed ? layoutStyles["main-area--with-player-collapsed"] : "",
     isAuth ? layoutStyles["main-area--auth"] : "",
   ]
     .filter(Boolean)
@@ -58,7 +58,7 @@ function AppRoutes() {
           <Route
             path="/"
             element={
-              <HomePage locale={locale} onPlayerCollapsedChange={setPlayerCollapsed} />
+              <HomePage locale={locale} />
             }
           />
           <Route path="/chat" element={<ChatPlaceholder locale={locale} />} />
@@ -66,6 +66,7 @@ function AppRoutes() {
           <Route path="/auth" element={<AuthPage locale={locale} />} />
         </Routes>
       </main>
+      <NowPlaying locale={locale} onCollapsedChange={setPlayerCollapsed} />
     </>
   );
 }
