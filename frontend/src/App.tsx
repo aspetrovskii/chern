@@ -6,7 +6,7 @@ import { Header } from "./components/Header/Header";
 import { HomePage } from "./components/Home/HomePage";
 import { HelpPage } from "./components/Help/HelpPage";
 import { AuthPage } from "./components/Auth/AuthPage";
-import { ChatPlaceholder } from "./components/ChatPlaceholder";
+import { ChatPage } from "./components/Chat/ChatPage";
 import { NowPlaying } from "./components/Home/NowPlaying";
 import layoutStyles from "./components/MainLayout.module.css";
 
@@ -61,7 +61,7 @@ function AppRoutes() {
               <HomePage locale={locale} />
             }
           />
-          <Route path="/chat" element={<ChatPlaceholder locale={locale} />} />
+          <Route path="/chat" element={<ChatPage locale={locale} />} />
           <Route path="/help" element={<HelpPage locale={locale} />} />
           <Route path="/auth" element={<AuthPage locale={locale} />} />
         </Routes>

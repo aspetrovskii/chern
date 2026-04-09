@@ -156,3 +156,13 @@ export async function loginUser(creds: {
 export function logoutUser(): void {
   clearSession();
 }
+
+export function loginWithSpotify(): { ok: true } {
+  const user: StoredUser = {
+    login: "spotify_user",
+    email: "spotify.user@conce-music.ai",
+    passHash: "spotify-oauth",
+  };
+  setSession(user);
+  return { ok: true };
+}

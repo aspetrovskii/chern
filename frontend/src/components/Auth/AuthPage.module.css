@@ -12,29 +12,11 @@
   text-align: center;
 }
 
-.auth-page__tabs {
-  display: flex;
-  gap: 0.35rem;
-  margin-bottom: 1.1rem;
-}
-
-.auth-page__tab {
-  flex: 1;
-  padding: 0.45rem 0.65rem;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border-soft);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(220, 224, 232, 0.88);
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.auth-page__tab--active {
-  border-color: rgba(129, 140, 248, 0.45);
-  background: rgba(59, 130, 246, 0.12);
-  color: #fff;
+.auth-page__hint {
+  margin: 0 0 1.1rem;
+  text-align: center;
+  color: rgba(226, 232, 240, 0.86);
+  line-height: 1.45;
 }
 
 .auth-page__err {
@@ -48,23 +30,47 @@
   line-height: 1.4;
 }
 
-.auth-page__captcha-wrap {
-  margin-top: 0.25rem;
-}
-
-.auth-page__turnstile {
-  min-height: 4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .auth-page__actions {
   margin-top: 1rem;
 }
 
-.auth-page__submit {
+.auth-page__spotify-btn {
   width: 100%;
+  min-height: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  background: #0b0b0c;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font: inherit;
+  font-size: 0.96rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.auth-page__spotify-btn:hover {
+  background: #111214;
+}
+
+.auth-page__spotify-btn:focus-visible {
+  outline: 2px solid rgba(30, 215, 96, 0.8);
+  outline-offset: 2px;
+}
+
+.auth-page__spotify-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #1ed760;
+  display: inline-flex;
+}
+
+.auth-page__spotify-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .auth-page__back {
