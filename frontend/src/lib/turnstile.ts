@@ -1,19 +1,11 @@
-/**
- * Cloudflare Turnstile — load API and render widgets.
- * Replace site key with your key from https://dash.cloudflare.com → Turnstile.
- * Client test sitekey (always passes, visible) — NOT the Siteverify secret:
- * https://developers.cloudflare.com/turnstile/troubleshooting/testing/
- */
-
 export const TURNSTILE_SITE_KEY =
   typeof window !== "undefined" && window.__TURNSTILE_SITE_KEY__
     ? window.__TURNSTILE_SITE_KEY__
-    : "1x00000000000000000000AA";
+    : import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
 
-let loadPromise = /** @type {Promise<void> | null} */ (null);
+let loadPromise: Promise<void> | null = null;
 
-/** @returns {Promise<void>} */
-export function loadTurnstileScript() {
+export function loadTurnstileScript(): Promise<void> {
   if (typeof window !== "undefined" && window.turnstile) {
     return Promise.resolve();
   }
@@ -30,9 +22,11 @@ export function loadTurnstileScript() {
         return;
       }
       existing.addEventListener("load", done, { once: true });
-      existing.addEventListener("error", () => reject(new Error("Turnstile script error")), {
-        once: true,
-      });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("Turnstile script error")),
+        { once: true }
+      );
       return;
     }
     const s = document.createElement("script");

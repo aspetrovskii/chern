@@ -1,0 +1,84 @@
+.site-header__brand {
+  text-decoration: none;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.site-header__brand:link,
+.site-header__brand:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-header__brand:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.65);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.site-header__brand .logo-text {
+  font-size: inherit;
+}
+
+.logo-text {
+  position: relative;
+  display: inline-block;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background-image:
+    linear-gradient(
+      110deg,
+      #fde047 0%,
+      #fbbf24 8%,
+      #fb923c 18%,
+      #f97316 28%,
+      #ef4444 38%,
+      #ec4899 48%,
+      #c026d3 58%,
+      #9333ea 68%,
+      #6366f1 78%,
+      #2563eb 88%,
+      #38bdf8 96%,
+      #fde047 100%
+    ),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  background-size: 280% 180%, 160px 160px;
+  background-repeat: no-repeat, repeat;
+  background-position: 0% 50%, 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  isolation: isolate;
+  animation: logo-water 18s ease-in-out infinite;
+}
+
+@keyframes logo-water {
+  0%,
+  100% {
+    background-position: 0% 50%, 0 0;
+  }
+  25% {
+    background-position: 40% 35%, 20px 10px;
+  }
+  50% {
+    background-position: 100% 55%, 40px 0;
+  }
+  75% {
+    background-position: 60% 65%, 10px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-header__brand {
+    font-size: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-text {
+    animation: none;
+    background-size: 100% 100%, 160px 160px;
+    background-position: 50% 50%, 0 0;
+  }
+}

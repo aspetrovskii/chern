@@ -1,9 +1,8 @@
-/** @typedef {'ru'|'en'|'tr'|'hi'|'zh'} Locale */
+export type Locale = "ru" | "en" | "tr" | "hi" | "zh";
 
 const STORAGE_KEY = "conce-ai-locale";
 
-/** @type {Record<Locale, Record<string, string>>} */
-const MESSAGES = {
+const MESSAGES: Record<Locale, Record<string, string>> = {
   en: {
     brand: "Conce AI",
     nav_chat: "Chat",
@@ -26,8 +25,7 @@ const MESSAGES = {
     page_chat_body: "Chat screen placeholder — backend integration comes later.",
     page_help_title: "Help",
     page_help_body: "Help screen placeholder — documentation will appear here.",
-    help_support_intro:
-      "Ran into an issue? Send a message to our support team!",
+    help_support_intro: "Ran into an issue? Send a message to our support team!",
     help_field_message: "Your message",
     help_field_email: "Email",
     help_placeholder_message: "Describe what happened…",
@@ -79,14 +77,12 @@ const MESSAGES = {
     home_player_pause_aria: "Пауза",
     home_player_next_aria: "Следующий трек",
     page_home_title: "Главная",
-    page_home_body:
-      "Подключён mock API. Шапка и маршрутизация готовы к тестированию.",
+    page_home_body: "Подключён mock API. Шапка и маршрутизация готовы к тестированию.",
     page_chat_title: "Чат",
     page_chat_body: "Заглушка экрана чата — бэкенд подключится позже.",
     page_help_title: "Помощь",
     page_help_body: "Заглушка раздела помощи — здесь будет документация.",
-    help_support_intro:
-      "Столкнулись с проблемой? Напишите обращение в службу поддержки!",
+    help_support_intro: "Столкнулись с проблемой? Напишите обращение в службу поддержки!",
     help_field_message: "Текст обращения",
     help_field_email: "Электронная почта",
     help_placeholder_message: "Опишите проблему…",
@@ -115,8 +111,7 @@ const MESSAGES = {
     auth_err_mismatch: "Пароли не совпадают.",
     auth_err_exists_email: "Эта почта уже зарегистрирована.",
     auth_err_exists_login: "Этот логин занят.",
-    auth_err_invalid_login:
-      "Логин: 2–32 символа — латиница, цифры, _, точка, дефис.",
+    auth_err_invalid_login: "Логин: 2–32 символа — латиница, цифры, _, точка, дефис.",
     auth_err_invalid_email: "Укажите корректный email.",
     auth_err_login: "Неверный логин/почта или пароль.",
     auth_err_generic: "Не получилось. Попробуйте снова.",
@@ -138,14 +133,12 @@ const MESSAGES = {
     home_player_pause_aria: "Duraklat",
     home_player_next_aria: "Sonraki parça",
     page_home_title: "Ana sayfa",
-    page_home_body:
-      "Sahte API bağlı. Üst bilgi ve yönlendirme test için hazır.",
+    page_home_body: "Sahte API bağlı. Üst bilgi ve yönlendirme test için hazır.",
     page_chat_title: "Sohbet",
     page_chat_body: "Sohbet ekranı yer tutucu — arka uç daha sonra bağlanacak.",
     page_help_title: "Yardım",
     page_help_body: "Yardım yer tutucu — belgeler burada olacak.",
-    help_support_intro:
-      "Sorun mu yaşıyorsunuz? Destek ekibimize yazın!",
+    help_support_intro: "Sorun mu yaşıyorsunuz? Destek ekibimize yazın!",
     help_field_message: "Mesajınız",
     help_field_email: "E-posta",
     help_placeholder_message: "Sorunu kısaca anlatın…",
@@ -174,8 +167,7 @@ const MESSAGES = {
     auth_err_mismatch: "Şifreler eşleşmiyor.",
     auth_err_exists_email: "Bu e-posta zaten kayıtlı.",
     auth_err_exists_login: "Bu kullanıcı adı alınmış.",
-    auth_err_invalid_login:
-      "Kullanıcı adı: 2–32 karakter; harf, rakam, _, ., -",
+    auth_err_invalid_login: "Kullanıcı adı: 2–32 karakter; harf, rakam, _, ., -",
     auth_err_invalid_email: "Geçerli bir e-posta girin.",
     auth_err_login: "Kullanıcı adı/e-posta veya şifre hatalı.",
     auth_err_generic: "Bir sorun oldu. Tekrar deneyin.",
@@ -197,14 +189,12 @@ const MESSAGES = {
     home_player_pause_aria: "रोकें",
     home_player_next_aria: "अगला ट्रैक",
     page_home_title: "होम",
-    page_home_body:
-      "मॉक API जुड़ा है। हेडर और रूटिंग परीक्षण के लिए तैयार हैं।",
+    page_home_body: "मॉक API जुड़ा है। हेडर और रूटिंग परीक्षण के लिए तैयार हैं।",
     page_chat_title: "चैट",
     page_chat_body: "चैट स्क्रीन प्लेसहोल्ड — बैकएंड बाद में जुड़ेगा।",
     page_help_title: "सहायता",
     page_help_body: "सहायता प्लेसहोल्ड — यहाँ दस्तावेज़ होंगे।",
-    help_support_intro:
-      "समस्या आई है? सहायता टीम को संदेश भेजें!",
+    help_support_intro: "समस्या आई है? सहायता टीम को संदेश भेजें!",
     help_field_message: "आपका संदेश",
     help_field_email: "ईमेल",
     help_placeholder_message: "समस्या का वर्णन करें…",
@@ -233,8 +223,7 @@ const MESSAGES = {
     auth_err_mismatch: "पासवर्ड मेल नहीं खाते।",
     auth_err_exists_email: "यह ईमेल पहले से पंजीकृत है।",
     auth_err_exists_login: "यह यूज़रनेम लिया हुआ है।",
-    auth_err_invalid_login:
-      "यूज़रनेम: 2–32 वर्ण — अंग्रेज़ी अक्षर, अंक, _, ., -",
+    auth_err_invalid_login: "यूज़रनेम: 2–32 वर्ण — अंग्रेज़ी अक्षर, अंक, _, ., -",
     auth_err_invalid_email: "वैध ईमेल दर्ज करें।",
     auth_err_login: "यूज़रनेम/ईमेल या पासवर्ड गलत है।",
     auth_err_generic: "कुछ गलत हुआ। फिर कोशिश करें।",
@@ -296,12 +285,7 @@ const MESSAGES = {
   },
 };
 
-/**
- * flagCode: ISO 3166-1 alpha-2 для https://flagcdn.com (фото флага)
- * en → gb (Великобритания), hi → in (Индия), zh → cn (КНР)
- */
-/** @type {Record<Locale, { flagCode: string; label: string }>} */
-export const LOCALE_META = {
+export const LOCALE_META: Record<Locale, { flagCode: string; label: string }> = {
   ru: { flagCode: "ru", label: "Русский" },
   en: { flagCode: "gb", label: "English" },
   tr: { flagCode: "tr", label: "Türkçe" },
@@ -309,15 +293,13 @@ export const LOCALE_META = {
   zh: { flagCode: "cn", label: "中文" },
 };
 
-/** @param {string} flagCode @param {number} [w] */
-export function flagImageUrl(flagCode, w = 40) {
+export function flagImageUrl(flagCode: string, w = 40): string {
   return `https://flagcdn.com/w${w}/${flagCode.toLowerCase()}.png`;
 }
 
-/** @returns {Locale} */
-export function getLocale() {
+export function getLocale(): Locale {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved && saved in MESSAGES) return /** @type {Locale} */ (saved);
+  if (saved && saved in MESSAGES) return saved as Locale;
   const nav = navigator.language || "en";
   if (nav.startsWith("ru")) return "ru";
   if (nav.startsWith("tr")) return "tr";
@@ -326,20 +308,18 @@ export function getLocale() {
   return "en";
 }
 
-/** @param {Locale} locale */
-export function setLocale(locale) {
+export function setLocale(locale: Locale): void {
   if (!(locale in MESSAGES)) return;
   localStorage.setItem(STORAGE_KEY, locale);
   document.documentElement.lang = locale === "zh" ? "zh-CN" : locale;
 }
 
-/**
- * @param {Locale} locale
- * @param {string} key
- * @param {Record<string, string | number>} [vars]
- */
-export function t(locale, key, vars) {
-  const table = MESSAGES[locale] || MESSAGES.en;
+export function t(
+  locale: Locale,
+  key: string,
+  vars?: Record<string, string | number>
+): string {
+  const table = MESSAGES[locale] ?? MESSAGES.en;
   let s = table[key] ?? MESSAGES.en[key] ?? key;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
@@ -349,10 +329,12 @@ export function t(locale, key, vars) {
   return s;
 }
 
-export function subscribeLocale(callback) {
-  window.addEventListener("conce-locale-change", () => callback(getLocale()));
+export function subscribeLocale(callback: () => void): () => void {
+  const handler = () => callback();
+  window.addEventListener("conce-locale-change", handler);
+  return () => window.removeEventListener("conce-locale-change", handler);
 }
 
-export function notifyLocaleChange() {
+export function notifyLocaleChange(): void {
   window.dispatchEvent(new Event("conce-locale-change"));
 }

@@ -1,0 +1,76 @@
+.help-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.help-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.help-form__label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(220, 224, 232, 0.88);
+}
+
+.neo-glass-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  color: rgba(245, 246, 250, 0.96);
+  font: inherit;
+  font-size: 0.98rem;
+  box-shadow: var(--glass-inset), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.neo-glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.neo-glass-input:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.45);
+  box-shadow: var(--glass-inset), 0 0 0 2px rgba(129, 140, 248, 0.3);
+}
+
+.help-form__textarea {
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.help-form__actions {
+  margin-top: 0.25rem;
+}
+
+.neo-glass-btn {
+  padding: 0.65rem 1.35rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  color: rgba(240, 242, 250, 0.98);
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--glass-inset), 0 4px 18px rgba(0, 0, 0, 0.22);
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.neo-glass-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.neo-glass-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}

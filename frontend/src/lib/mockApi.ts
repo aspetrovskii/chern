@@ -1,20 +1,17 @@
-/**
- * Mock API layer — replace with real backend calls later.
- * Simulates latency and JSON responses for frontend testing.
- */
-
 const LATENCY_MS = 180;
 
-function delay(ms) {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * @typedef {{ appName: string; version: string; env: string; features: string[] }} SiteConfig
- */
+export type SiteConfig = {
+  appName: string;
+  version: string;
+  env: string;
+  features: string[];
+};
 
-/** @returns {Promise<SiteConfig>} */
-export async function fetchSiteConfig() {
+export async function fetchSiteConfig(): Promise<SiteConfig> {
   await delay(LATENCY_MS);
   return {
     appName: "Conce AI",
@@ -24,14 +21,14 @@ export async function fetchSiteConfig() {
   };
 }
 
-/**
- * Install optional fetch interceptor for paths starting with /api/mock/
- * Use when testing code written against fetch().
- */
-export function installMockFetchInterceptor() {
+let mockFetchInstalled = false;
+
+export function installMockFetchInterceptor(): void {
+  if (mockFetchInstalled) return;
+  mockFetchInstalled = true;
   const original = window.fetch.bind(window);
-  window.fetch = async (input, init) => {
-    const url = typeof input === "string" ? input : input.url;
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     if (url.startsWith("/api/mock/")) {
       await delay(LATENCY_MS);
       if (url.includes("config")) {

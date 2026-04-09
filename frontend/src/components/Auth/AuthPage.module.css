@@ -1,0 +1,88 @@
+.auth-page-root {
+  max-width: 24rem;
+  margin: 0 auto;
+}
+
+.auth-page__shell {
+  padding: 1.75rem 1.5rem 1.5rem;
+}
+
+.auth-page__title {
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+.auth-page__tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+}
+
+.auth-page__tab {
+  flex: 1;
+  padding: 0.45rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(220, 224, 232, 0.88);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-page__tab--active {
+  border-color: rgba(129, 140, 248, 0.45);
+  background: rgba(59, 130, 246, 0.12);
+  color: #fff;
+}
+
+.auth-page__err {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: rgba(254, 202, 202, 0.95);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.auth-page__captcha-wrap {
+  margin-top: 0.25rem;
+}
+
+.auth-page__turnstile {
+  min-height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-page__actions {
+  margin-top: 1rem;
+}
+
+.auth-page__submit {
+  width: 100%;
+}
+
+.auth-page__back {
+  display: inline-block;
+  margin-top: 1.1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(165, 180, 252, 0.95);
+  text-decoration: none;
+}
+
+.auth-page__back:hover {
+  color: #c7d2fe;
+  text-decoration: underline;
+}
+
+.auth-page__back:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.65);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
