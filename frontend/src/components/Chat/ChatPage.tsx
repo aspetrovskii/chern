@@ -3,6 +3,7 @@ import { type Locale } from "../../lib/i18n";
 import styles from "./ChatPage.module.css";
 import {
   createChat,
+  deleteChat,
   getTrackById,
   listChats,
   sendUserPrompt,
@@ -13,6 +14,16 @@ import {
 type ChatPageProps = {
   locale: Locale;
 };
+
+type SavedConcertItem = {
+  id: string;
+  chatId: string;
+  chatTitle: string;
+  version: number;
+  savedAt: string;
+};
+
+const SAVED_CONCERTS_STORAGE_KEY = "conce-mvp-saved-concerts-v1";
 
 const EMPTY_CHAT_HEADLINES_EN = [
   "Ready when you are.",
@@ -144,6 +155,11 @@ const CHAT_UI_TEXT: Record<
     orderSourcePrefix: string;
     dragHint: string;
     versionLabel: string;
+    savedConcerts: string;
+    hideConcerts: string;
+    showConcerts: string;
+    saveConcert: string;
+    noSavedConcerts: string;
   }
 > = {
   en: {
@@ -164,6 +180,11 @@ const CHAT_UI_TEXT: Record<
     orderSourcePrefix: "Order source",
     dragHint: "Drag tracks and save the order.",
     versionLabel: "Version",
+    savedConcerts: "Saved concerts",
+    hideConcerts: "Hide concerts",
+    showConcerts: "Show concerts",
+    saveConcert: "Save concert",
+    noSavedConcerts: "No saved concerts yet",
   },
   ru: {
     hideChats: "Скрыть чаты",
@@ -183,6 +204,11 @@ const CHAT_UI_TEXT: Record<
     orderSourcePrefix: "Источник порядка",
     dragHint: "Перетаскивайте треки и сохраните порядок.",
     versionLabel: "Версия",
+    savedConcerts: "Сохраненные концерты",
+    hideConcerts: "Скрыть концерты",
+    showConcerts: "Показать концерты",
+    saveConcert: "Сохранить концерт",
+    noSavedConcerts: "Пока нет сохраненных концертов",
   },
   tr: {
     hideChats: "Sohbetleri gizle",
@@ -202,6 +228,11 @@ const CHAT_UI_TEXT: Record<
     orderSourcePrefix: "Sıra kaynağı",
     dragHint: "Parçaları sürükleyin ve sırayı kaydedin.",
     versionLabel: "Sürüm",
+    savedConcerts: "Kaydedilen konserler",
+    hideConcerts: "Konserleri gizle",
+    showConcerts: "Konserleri göster",
+    saveConcert: "Konseri kaydet",
+    noSavedConcerts: "Henüz kaydedilen konser yok",
   },
   hi: {
     hideChats: "चैट छिपाएँ",
@@ -221,6 +252,11 @@ const CHAT_UI_TEXT: Record<
     orderSourcePrefix: "क्रम स्रोत",
     dragHint: "ट्रैक्स को ड्रैग करें और क्रम सहेजें।",
     versionLabel: "संस्करण",
+    savedConcerts: "सहेजे गए कॉन्सर्ट",
+    hideConcerts: "कॉन्सर्ट छिपाएँ",
+    showConcerts: "कॉन्सर्ट दिखाएँ",
+    saveConcert: "कॉन्सर्ट सहेजें",
+    noSavedConcerts: "अभी तक कोई सहेजा गया कॉन्सर्ट नहीं",
   },
   zh: {
     hideChats: "隐藏聊天",
@@ -240,6 +276,11 @@ const CHAT_UI_TEXT: Record<
     orderSourcePrefix: "顺序来源",
     dragHint: "拖拽曲目并保存顺序。",
     versionLabel: "版本",
+    savedConcerts: "已保存演出",
+    hideConcerts: "隐藏演出",
+    showConcerts: "显示演出",
+    saveConcert: "保存演出",
+    noSavedConcerts: "暂无已保存演出",
   },
 };
 
@@ -282,12 +323,26 @@ export function ChatPage({ locale }: ChatPageProps) {
   const [prompt, setPrompt] = useState("");
   const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [savedConcertsOpen, setSavedConcertsOpen] = useState(true);
+  const [savedConcerts, setSavedConcerts] = useState<SavedConcertItem[]>([]);
 
   useEffect(() => {
     const items = listChats();
     setChats(items);
     setActiveChatId(items[0]?.id ?? null);
+    try {
+      const raw = localStorage.getItem(SAVED_CONCERTS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) setSavedConcerts(parsed as SavedConcertItem[]);
+    } catch {
+      setSavedConcerts([]);
+    }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(SAVED_CONCERTS_STORAGE_KEY, JSON.stringify(savedConcerts));
+  }, [savedConcerts]);
 
   const activeChat = useMemo(
     () => chats.find((c) => c.id === activeChatId) ?? null,
@@ -301,6 +356,10 @@ export function ChatPage({ locale }: ChatPageProps) {
   }, [activeChat, localizedHeadlines]);
   const activeConcert = activeChat?.concerts.at(-1) ?? null;
   const renderedOrder = draftOrder ?? activeConcert?.orderedTrackIds ?? [];
+  const activeConcertSavedId =
+    activeChat && activeConcert ? `${activeChat.id}:${activeConcert.version}` : null;
+  const isActiveConcertSaved =
+    activeConcertSavedId !== null && savedConcerts.some((item) => item.id === activeConcertSavedId);
   const groupedChats = useMemo(() => {
     const filtered = chats.filter((chat) =>
       chat.title.toLowerCase().includes(search.trim().toLowerCase())
@@ -332,6 +391,38 @@ export function ChatPage({ locale }: ChatPageProps) {
     const created = createChat();
     refresh(created.id);
     setDraftOrder(null);
+  }
+
+  function onDeleteChat(chatId: string): void {
+    const didDelete = deleteChat(chatId);
+    if (!didDelete) return;
+    setSavedConcerts((prev) => prev.filter((item) => item.chatId !== chatId));
+    const items = listChats();
+    setChats(items);
+    if (chatId === activeChatId) {
+      setActiveChatId(items[0]?.id ?? null);
+      setDraftOrder(null);
+    }
+  }
+
+  function onSaveConcert(): void {
+    if (!activeChat || !activeConcert) return;
+    const id = `${activeChat.id}:${activeConcert.version}`;
+    setSavedConcerts((prev) => {
+      if (prev.some((item) => item.id === id)) return prev;
+      const nextItem: SavedConcertItem = {
+        id,
+        chatId: activeChat.id,
+        chatTitle: activeChat.title || ui.untitled,
+        version: activeConcert.version,
+        savedAt: new Date().toISOString(),
+      };
+      return [nextItem, ...prev].sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1));
+    });
+  }
+
+  function onDeleteSavedConcert(id: string): void {
+    setSavedConcerts((prev) => prev.filter((item) => item.id !== id));
   }
 
   function onStartFromEmpty(): void {
@@ -400,7 +491,12 @@ export function ChatPage({ locale }: ChatPageProps) {
           <>
             <div className={styles["search-wrap"]}>
               <span className={styles["search-icon"]} aria-hidden="true">
-                🔍
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M11 4a7 7 0 105.15 11.75l3.55 3.55a1 1 0 001.4-1.4l-3.55-3.55A7 7 0 0011 4z"
+                    fill="currentColor"
+                  />
+                </svg>
               </span>
               <input
                 type="text"
@@ -412,10 +508,10 @@ export function ChatPage({ locale }: ChatPageProps) {
             </div>
             <div className={styles["sidebar-links"]}>
               <a className={styles["sidebar-link"]} href="#/help">
-                📄 {ui.docs}
+                {ui.docs}
               </a>
               <a className={styles["sidebar-link"]} href="#/help">
-                ❓ {ui.faq}
+                {ui.faq}
               </a>
             </div>
 
@@ -426,16 +522,26 @@ export function ChatPage({ locale }: ChatPageProps) {
                   <ul className={styles["chat-list"]}>
                     {items.map((chat) => (
                       <li key={chat.id}>
-                        <button
-                          type="button"
-                          className={`${styles["chat-item-btn"]} ${chat.id === activeChatId ? styles.active : ""}`}
-                          onClick={() => {
-                            setActiveChatId(chat.id);
-                            setDraftOrder(null);
-                          }}
-                        >
-                          {chat.title || ui.untitled}
-                        </button>
+                        <div className={styles["chat-item-row"]}>
+                          <button
+                            type="button"
+                            className={`${styles["chat-item-btn"]} ${chat.id === activeChatId ? styles.active : ""}`}
+                            onClick={() => {
+                              setActiveChatId(chat.id);
+                              setDraftOrder(null);
+                            }}
+                          >
+                            {chat.title || ui.untitled}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles["delete-item-btn"]}
+                            aria-label="Delete chat"
+                            onClick={() => onDeleteChat(chat.id)}
+                          >
+                            ×
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -582,6 +688,14 @@ export function ChatPage({ locale }: ChatPageProps) {
                   <button
                     type="button"
                     className={styles.btn}
+                    onClick={onSaveConcert}
+                    disabled={isActiveConcertSaved}
+                  >
+                    {ui.saveConcert}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.btn}
                     onClick={onSaveOrder}
                     disabled={!draftOrder}
                   >
@@ -603,6 +717,55 @@ export function ChatPage({ locale }: ChatPageProps) {
           </>
         )}
       </section>
+
+      <aside
+        className={`${styles.sidebar} ${savedConcertsOpen ? styles["sidebar-open"] : styles["sidebar-closed"]}`}
+      >
+        <div className={styles["sidebar-top"]}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles["btn-icon"]}`}
+            aria-label={savedConcertsOpen ? ui.hideConcerts : ui.showConcerts}
+            onClick={() => setSavedConcertsOpen((v) => !v)}
+            title={savedConcertsOpen ? ui.hideConcerts : ui.showConcerts}
+          >
+            {savedConcertsOpen ? "▶" : "◀"}
+          </button>
+          {savedConcertsOpen && <strong>{ui.savedConcerts}</strong>}
+        </div>
+
+        {savedConcertsOpen && (
+          <div className={styles["chat-groups"]}>
+            <ul className={styles["chat-list"]}>
+              {savedConcerts.map((item) => (
+                <li key={item.id}>
+                  <div className={styles["chat-item-row"]}>
+                    <button
+                      type="button"
+                      className={styles["chat-item-btn"]}
+                      onClick={() => {
+                        setActiveChatId(item.chatId);
+                        setDraftOrder(null);
+                      }}
+                    >
+                      {item.chatTitle} - v{item.version}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles["delete-item-btn"]}
+                      aria-label="Delete saved concert"
+                      onClick={() => onDeleteSavedConcert(item.id)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {savedConcerts.length === 0 && <p className={styles.muted}>{ui.noSavedConcerts}</p>}
+          </div>
+        )}
+      </aside>
     </div>
   );
 }

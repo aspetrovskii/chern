@@ -104,6 +104,14 @@ export function createChat(): ChatRecord {
   return chat;
 }
 
+export function deleteChat(chatId: string): boolean {
+  const chats = listChats();
+  const next = chats.filter((chat) => chat.id !== chatId);
+  if (next.length === chats.length) return false;
+  saveChats(next);
+  return true;
+}
+
 export function updateChatTargetCount(chatId: string, targetTrackCount: number): ChatRecord | null {
   const chats = listChats();
   const nextCount = Math.max(5, Math.min(30, Math.round(targetTrackCount)));
