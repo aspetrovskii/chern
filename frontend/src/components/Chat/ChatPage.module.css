@@ -51,6 +51,8 @@
   max-width: 58px;
   flex-basis: 58px;
   opacity: 1;
+  /* 0.8rem horizontal padding made inner width < 38px toggle — clip / skew vs rail */
+  padding: 0.75rem 8px;
 }
 
 .sidebar-top {
@@ -58,6 +60,10 @@
   gap: 0.5rem;
   align-items: center;
   flex-shrink: 0;
+}
+
+.sidebar-closed .sidebar-top {
+  justify-content: center;
 }
 
 .new-chat-btn {
