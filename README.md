@@ -265,15 +265,66 @@ E(\pi) = \alpha E_{\text{rel}} + \beta E_{\text{trans}} + \gamma E_{\text{arc}} 
 
 ---
 
-## 14. Локальная разработка (черновик)
+## 14. Локальная разработка и Docker
+
+### 14.1. Переменные окружения
+
+1. Скопируйте шаблон: `cp .env.example .env` (Windows: `copy .env.example .env`).
+2. Заполните секреты: Spotify, Yandex (или оставьте пустыми — см. fallback ниже), `CRYPTO_KEY`, `JWT_SECRET`.
+3. `PROVIDER_MODE=auto` (по умолчанию): при отсутствии валидных кредов для Yandex/Spotify бэкенд использует mock-транспорты; в API `GET /api/v1/providers/status` поле `ui_data_source` покажет `real_providers` или `mock_fallback`. Принудительно: `mock` или `real`.
+
+### 14.2. Режим без Docker (бэкенд + Vite)
+
+Терминал 1 — API из корня репозитория (`PYTHONPATH` уже в `pytest`; для ручного запуска):
 
 ```bash
-# после появления кода
-cp .env.example .env
+python -m alembic upgrade head
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+(Из каталога с `src`: задайте `PYTHONPATH=src` или запускайте из IDE с этим путём.)
+
+Терминал 2 — фронт:
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Vite проксирует `/api` на `http://127.0.0.1:8000`. Откройте URL из вывода Vite (порт по умолчанию в проекте — `5174`). В `.env` укажите `FRONTEND_PUBLIC_URL` с этим портом, если отличается от примера.
+
+### 14.3. Docker Compose (API + статический фронт)
+
+Файл `docker-compose.yml`: сервис **`api`** (FastAPI, порт **8000**), **`web`** (nginx со сборкой SPA, порт **8080**), том **`conce_data`** для SQLite (`sqlite.db`, `llm_cache.db`).
+
+1. Подготовьте `.env` в корне репозитория (compose читает его как `env_file`).
+2. Для стека в браузере выставьте как минимум:
+   - `FRONTEND_PUBLIC_URL=http://127.0.0.1:8080` — куда бэкенд редиректит после Spotify OAuth;
+   - `SPOTIFY_REDIRECT_URI=http://127.0.0.1:8000/api/v1/auth/spotify/callback` — должен **совпадать** с URI в [Spotify Dashboard](https://developer.spotify.com/dashboard) (как в §5.1).
+3. Запуск:
+
+```bash
 docker compose up --build
 ```
 
-*(Заполнить `.env.example` при первой реализации репозитория.)*
+Если Docker ругается на пустое имя проекта (редко — из‑за имени каталога), задайте его явно: `COMPOSE_PROJECT_NAME=conce-music docker compose up --build`. В `docker-compose.yml` уже задано `name: conce-music`.
+
+4. Проверка:
+   - Health API: `curl http://127.0.0.1:8000/health` → `{"status":"ok"}`;
+   - UI: `http://127.0.0.1:8080/`.
+
+Сборка фронта в образе задаёт `VITE_API_BASE_URL=http://127.0.0.1:8000`, чтобы SPA с порта 8080 ходила на API на 8000. Если вы публикуете приложение под другими хостами/портами, пересоберите образ `web` с другим `build.args.VITE_API_BASE_URL` в `docker-compose.yml`.
+
+5. Smoke после запуска (на хосте, с работающим compose):
+
+```bash
+python scripts/smoke_docker_compose.py
+```
+
+6. Smoke пайплайна API внутри контейнера (FastAPI `TestClient`): скрипт сам запускает изолированный дочерний процесс с `PROVIDER_MODE=mock`, пустыми ключами Spotify/Yandex и **временной SQLite**, чтобы не зависеть от секретов в `.env` и не писать в том же файле БД, что и работающий `uvicorn`.
+
+```bash
+docker compose exec api python /app/scripts/smoke_api.py
+```
 
 ---
 
@@ -290,6 +341,7 @@ docker compose up --build
   - backend: `python scripts/smoke_llm_pipeline.py`
   - backend api: `python -m alembic upgrade head` + `python scripts/smoke_api.py`
   - frontend: `npm run smoke` (в каталоге `frontend`)
+  - после `docker compose up`: `python scripts/smoke_docker_compose.py` и при необходимости `docker compose exec api python /app/scripts/smoke_api.py`
 
 CI workflow: `.github/workflows/quality-gates.yml`
 

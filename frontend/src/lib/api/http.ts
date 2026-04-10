@@ -1,4 +1,8 @@
-const API_PREFIX = "/api/v1";
+/** Empty in dev (Vite proxy); e.g. http://127.0.0.1:8000 when SPA is served separately (Docker web). */
+export function getApiV1Prefix(): string {
+  const base = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+  return base ? `${base}/api/v1` : "/api/v1";
+}
 
 const ACCESS_KEY = "conce-api-access-token";
 
@@ -36,7 +40,7 @@ export async function apiRequest<T>(path: string, init: RequestInit & { json?: u
     h.set("Content-Type", "application/json");
     rest.body = JSON.stringify(json);
   }
-  const res = await fetch(`${API_PREFIX}${path}`, { ...rest, headers: h });
+  const res = await fetch(`${getApiV1Prefix()}${path}`, { ...rest, headers: h });
   if (res.status === 204) {
     return undefined as T;
   }

@@ -1,4 +1,4 @@
-import { apiRequest, clearAccessToken, getAccessToken } from "./api/http";
+import { apiRequest, clearAccessToken, getAccessToken, getApiV1Prefix } from "./api/http";
 
 const USERS_KEY = "conce-auth-users";
 const SESSION_KEY = "conce-auth-session";
@@ -163,7 +163,7 @@ export function logoutUser(): void {
 
 /** Редирект на Spotify OAuth (ответ приходит на backend GET /auth/spotify/callback → редирект в SPA). */
 export async function startSpotifyOAuthRedirect(): Promise<void> {
-  const r = await fetch("/api/v1/auth/spotify/login");
+  const r = await fetch(`${getApiV1Prefix()}/auth/spotify/login`);
   if (!r.ok) {
     throw new Error("spotify_login_url_failed");
   }

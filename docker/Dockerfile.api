@@ -1,0 +1,23 @@
+FROM python:3.12-slim-bookworm
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    "alembic>=1.13.0" \
+    "fastapi>=0.112.0" \
+    "httpx>=0.27.0" \
+    "pydantic-settings>=2.4.0" \
+    "pyjwt>=2.9.0" \
+    "sqlalchemy>=2.0.0" \
+    "uvicorn>=0.30.0"
+
+COPY alembic.ini /app/alembic.ini
+COPY alembic /app/alembic
+COPY src /app/src
+COPY scripts /app/scripts
+
+ENV PYTHONPATH=/app/src
+
+EXPOSE 8000
+# Inline entrypoint avoids CRLF issues when building context from Windows checkouts.
+ENTRYPOINT ["/bin/sh", "-c", "cd /app && alembic -c /app/alembic.ini upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]

@@ -1,9 +1,17 @@
-from fastapi.testclient import TestClient
+from __future__ import annotations
 
-from app.main import app
+import os
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+from fastapi.testclient import TestClient
 
 
 def run() -> None:
+    from app.main import app
+
     with TestClient(app) as client:
         health = client.get("/health")
         assert health.status_code == 200
@@ -16,6 +24,12 @@ def run() -> None:
         chat = client.post("/api/v1/chats", headers=headers, json={"title": "Smoke Chat"})
         assert chat.status_code == 200
         chat_id = chat.json()["id"]
+        mode_patch = client.patch(
+            f"/api/v1/chats/{chat_id}",
+            headers=headers,
+            json={"mode": "spotify_discovery"},
+        )
+        assert mode_patch.status_code == 200
 
         gen = client.post(
             f"/api/v1/chats/{chat_id}/messages",
@@ -39,5 +53,32 @@ def run() -> None:
     print("smoke_api: OK")
 
 
+def _run_isolated_subprocess() -> None:
+    """Unset provider creds for deterministic mock OAuth; use a temp DB to avoid clashing with a running API."""
+    fd, db_path = tempfile.mkstemp(suffix="-smoke.sqlite")
+    os.close(fd)
+    llm_path = f"{db_path}.llm"
+    env = os.environ.copy()
+    env["DB_PATH"] = db_path
+    env["LLM_CACHE_DB_PATH"] = llm_path
+    env["SMOKE_API_SUBPROCESS"] = "1"
+    env["PROVIDER_MODE"] = "mock"
+    # Empty strings override values from `.env` (pydantic-settings would else re-read the file).
+    env["SPOTIFY_CLIENT_ID"] = ""
+    env["SPOTIFY_CLIENT_SECRET"] = ""
+    env["YANDEX_API_KEY"] = ""
+    env["YANDEX_IAM_TOKEN"] = ""
+    env["YANDEX_MODEL_URI"] = ""
+    env["YANDEX_FOLDER_ID"] = ""
+    try:
+        subprocess.check_call([sys.executable, __file__], env=env)
+    finally:
+        Path(db_path).unlink(missing_ok=True)
+        Path(llm_path).unlink(missing_ok=True)
+
+
 if __name__ == "__main__":
-    run()
+    if os.environ.get("SMOKE_API_SUBPROCESS") != "1":
+        _run_isolated_subprocess()
+    else:
+        run()
