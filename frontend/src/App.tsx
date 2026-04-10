@@ -54,8 +54,10 @@ function AppRoutes() {
 
   const mainClass = [
     layoutStyles["main-area"],
-    !isChat ? layoutStyles["main-area--with-player"] : "",
+    !isChat && !playerCollapsed ? layoutStyles["main-area--with-player"] : "",
     !isChat && playerCollapsed ? layoutStyles["main-area--with-player-collapsed"] : "",
+    isChat && !playerCollapsed ? layoutStyles["main-area--chat-player"] : "",
+    isChat && playerCollapsed ? layoutStyles["main-area--chat-player-collapsed"] : "",
     isAuth ? layoutStyles["main-area--auth"] : "",
     isChat ? layoutStyles["main-area--chat"] : "",
   ]

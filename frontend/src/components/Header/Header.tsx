@@ -11,7 +11,7 @@ import { getSessionUser, logoutUser } from "../../lib/auth";
 import headerStyles from "./Header.module.css";
 import brandStyles from "../BrandText.module.css";
 
-const LANG_ORDER: Locale[] = ["ru", "en", "tr", "hi", "zh"];
+const LANG_ORDER: Locale[] = ["ru", "en", "de", "es", "id", "tr", "hi", "ur", "zh"];
 
 type LangDropdownProps = {
   locale: Locale;

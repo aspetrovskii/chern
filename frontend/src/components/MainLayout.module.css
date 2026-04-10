@@ -26,6 +26,15 @@
   min-height: 0;
 }
 
+/* Reserve space for fixed NowPlaying on /chat (same footprint as other routes). */
+.main-area--chat-player {
+  padding-bottom: 7.5rem;
+}
+
+.main-area--chat-player-collapsed {
+  padding-bottom: 3.75rem;
+}
+
 .page-title {
   margin: 0 0 0.75rem;
   font-size: 1.75rem;
