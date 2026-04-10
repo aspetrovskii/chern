@@ -1,4 +1,4 @@
-# Concert Playlist — техническая спецификация
+# Conce Music AI — техническая спецификация
 
 Веб-приложение: пользователь описывает намерение в чате; бэкенд подбирает кандидатов из Spotify (из фиксированного плейлиста пользователя или из расширенного пула по поиску/рекомендациям), обогащает треки тегами через **YandexGPT**, упорядочивает «как сет-лист концерта» **симулированным отжигом** на графе переходов; результат отображается в чате как **упорядоченный плейлист** с воспроизведением через **Spotify** (Web Playback SDK / deep link).
 
@@ -272,6 +272,23 @@ docker compose up --build
 ```
 
 *(Заполнить `.env.example` при первой реализации репозитория.)*
+
+---
+
+## 15. Quality gates (этап стабилизации)
+
+Перед merge в `develop` должны проходить:
+
+- **Lint**
+  - frontend: `npm run lint` (в каталоге `frontend`)
+  - backend: `python -m ruff check src tests scripts`
+- **Unit**
+  - backend: `python -m pytest`
+- **Integration smoke**
+  - backend: `python scripts/smoke_llm_pipeline.py`
+  - frontend: `npm run smoke` (в каталоге `frontend`)
+
+CI workflow: `.github/workflows/quality-gates.yml`
 
 ---
 

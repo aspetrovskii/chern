@@ -293,7 +293,7 @@ export function ChatPage({ locale }: ChatPageProps) {
     () => chats.find((c) => c.id === activeChatId) ?? null,
     [activeChatId, chats]
   );
-  const isActiveChatEmpty = Boolean(activeChat) && activeChat.messages.length === 0;
+  const isActiveChatEmpty = activeChat !== null && activeChat.messages.length === 0;
   const showCenteredEmptyState = !activeChat || isActiveChatEmpty;
   const emptyHeadline = useMemo(() => {
     if (!activeChat) return localizedHeadlines[0];
@@ -500,7 +500,7 @@ export function ChatPage({ locale }: ChatPageProps) {
         ) : (
           <>
             <div className={styles.messages}>
-              {activeChat.messages.map((m) => (
+              {activeChat?.messages.map((m) => (
                 <div
                   key={m.id}
                   className={`${styles.bubble} ${m.role === "user" ? styles.user : styles.assistant}`}
@@ -587,7 +587,7 @@ export function ChatPage({ locale }: ChatPageProps) {
                   >
                     {ui.saveOrder}
                   </button>
-                  {activeChat.concerts.map((c) => (
+                  {activeChat?.concerts.map((c) => (
                     <button
                       key={c.version}
                       type="button"

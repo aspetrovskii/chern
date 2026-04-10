@@ -18,7 +18,8 @@ class SQLiteTrackCache:
         return conn
 
     def _init_schema(self) -> None:
-        with self._connect() as conn:
+        conn = self._connect()
+        try:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS tracks_cache (
@@ -38,9 +39,12 @@ class SQLiteTrackCache:
                 "CREATE INDEX IF NOT EXISTS idx_tracks_cache_llm_version ON tracks_cache(llm_version)"
             )
             conn.commit()
+        finally:
+            conn.close()
 
     def get(self, spotify_track_id: str, llm_version: str) -> TrackTagsV1 | None:
-        with self._connect() as conn:
+        conn = self._connect()
+        try:
             row = conn.execute(
                 """
                 SELECT llm_tags
@@ -49,6 +53,8 @@ class SQLiteTrackCache:
                 """,
                 (spotify_track_id, llm_version),
             ).fetchone()
+        finally:
+            conn.close()
         if not row:
             return None
         return TrackTagsV1.from_json(row["llm_tags"])
@@ -61,7 +67,8 @@ class SQLiteTrackCache:
         tags: TrackTagsV1,
     ) -> None:
         now = datetime.now(UTC).isoformat()
-        with self._connect() as conn:
+        conn = self._connect()
+        try:
             conn.execute(
                 """
                 INSERT INTO tracks_cache (
@@ -89,3 +96,5 @@ class SQLiteTrackCache:
                 ),
             )
             conn.commit()
+        finally:
+            conn.close()
