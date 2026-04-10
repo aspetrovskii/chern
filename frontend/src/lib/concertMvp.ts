@@ -96,7 +96,7 @@ export function createChat(): ChatRecord {
   const ts = nowIso();
   const chat: ChatRecord = {
     id: uid("chat"),
-    title: "Новый концерт",
+    title: "Новый чат",
     targetTrackCount: DEFAULT_TARGET_COUNT,
     messages: [],
     concerts: [],

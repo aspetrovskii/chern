@@ -916,14 +916,16 @@ export function ChatPage({ locale }: ChatPageProps) {
                               {chat.title || ui.untitled}
                             </button>
                           )}
-                          <button
-                            type="button"
-                            className={styles["delete-item-btn"]}
-                            aria-label="Delete chat"
-                            onClick={() => onDeleteChat(chat.id)}
-                          >
-                            ×
-                          </button>
+                          <div className={styles["delete-item-wrap"]}>
+                            <button
+                              type="button"
+                              className={styles["delete-item-btn"]}
+                              aria-label="Delete chat"
+                              onClick={() => onDeleteChat(chat.id)}
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
                       </li>
                     ))}
@@ -1211,14 +1213,16 @@ export function ChatPage({ locale }: ChatPageProps) {
                         {item.displayName ?? `${item.chatTitle} - v${item.version}`}
                       </button>
                     )}
-                    <button
-                      type="button"
-                      className={styles["delete-item-btn"]}
-                      aria-label="Delete saved concert"
-                      onClick={() => onDeleteSavedConcert(item.id)}
-                    >
-                      ×
-                    </button>
+                    <div className={styles["delete-item-wrap"]}>
+                      <button
+                        type="button"
+                        className={styles["delete-item-btn"]}
+                        aria-label="Delete saved concert"
+                        onClick={() => onDeleteSavedConcert(item.id)}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 </li>
               ))}
