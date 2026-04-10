@@ -21,6 +21,8 @@ export type ChatMessage = {
 
 export type ConcertVersion = {
   version: number;
+  /** Optional user-defined name for this version */
+  label?: string;
   orderedTrackIds: string[];
   orderSource: "optimizer" | "user";
   prompt: string;
@@ -112,6 +114,39 @@ export function deleteChat(chatId: string): boolean {
   if (next.length === chats.length) return false;
   saveChats(next);
   return true;
+}
+
+export function updateChatTitle(chatId: string, title: string): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const trimmed = title.trim().slice(0, 120);
+  if (!trimmed) return null;
+  const ts = nowIso();
+  const next: ChatRecord = { ...chats[idx], title: trimmed, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
+}
+
+export function updateConcertLabel(chatId: string, version: number, label: string): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const chat = chats[idx];
+  const concertIdx = chat.concerts.findIndex((c) => c.version === version);
+  if (concertIdx < 0) return null;
+  const ts = nowIso();
+  const trimmed = label.trim().slice(0, 80);
+  const nextConcert: ConcertVersion = { ...chat.concerts[concertIdx], updatedAt: ts };
+  if (trimmed) nextConcert.label = trimmed;
+  else delete nextConcert.label;
+  const nextConcerts = [...chat.concerts];
+  nextConcerts[concertIdx] = nextConcert;
+  const next: ChatRecord = { ...chat, concerts: nextConcerts, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
 }
 
 export function updateChatTargetCount(chatId: string, targetTrackCount: number): ChatRecord | null {

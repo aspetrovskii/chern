@@ -172,9 +172,65 @@
 
 .chat-item-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.35rem;
+}
+
+.rename-input {
+  min-width: 0;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(245, 246, 250, 0.96);
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  outline: none;
+}
+
+.rename-input:focus {
+  border-color: rgba(129, 140, 248, 0.45);
+}
+
+.rename-item-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(245, 245, 245, 0.78);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(6px);
+  pointer-events: none;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease,
+    background 200ms ease;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rename-item-btn-spacer {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+}
+
+.chat-item-row:hover .rename-item-btn,
+.chat-item-row:focus-within .rename-item-btn {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.rename-item-btn:hover {
+  background: rgba(129, 140, 248, 0.22);
 }
 
 .delete-item-btn {
@@ -364,6 +420,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.concert-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.concert-title-row .rename-input {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+}
+
+.concert-title-row .rename-item-btn {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
 
 .concert {
