@@ -160,6 +160,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: string;
     saveConcert: string;
     noSavedConcerts: string;
+    llmReplyLabel: string;
   }
 > = {
   en: {
@@ -185,6 +186,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "Show concerts",
     saveConcert: "Save concert",
     noSavedConcerts: "No saved concerts yet",
+    llmReplyLabel: "LLM reply",
   },
   ru: {
     hideChats: "Скрыть чаты",
@@ -209,6 +211,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "Показать концерты",
     saveConcert: "Сохранить концерт",
     noSavedConcerts: "Пока нет сохраненных концертов",
+    llmReplyLabel: "Ответ модели",
   },
   tr: {
     hideChats: "Sohbetleri gizle",
@@ -233,6 +236,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "Konserleri göster",
     saveConcert: "Konseri kaydet",
     noSavedConcerts: "Henüz kaydedilen konser yok",
+    llmReplyLabel: "LLM yanıtı",
   },
   hi: {
     hideChats: "चैट छिपाएँ",
@@ -257,6 +261,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "कॉन्सर्ट दिखाएँ",
     saveConcert: "कॉन्सर्ट सहेजें",
     noSavedConcerts: "अभी तक कोई सहेजा गया कॉन्सर्ट नहीं",
+    llmReplyLabel: "LLM उत्तर",
   },
   zh: {
     hideChats: "隐藏聊天",
@@ -281,6 +286,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "显示演出",
     saveConcert: "保存演出",
     noSavedConcerts: "暂无已保存演出",
+    llmReplyLabel: "LLM 回复",
   },
   ur: {
     hideChats: "چیٹس چھپائیں",
@@ -305,6 +311,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "کنسرٹس دکھائیں",
     saveConcert: "کنسرٹ محفوظ کریں",
     noSavedConcerts: "ابھی کوئی محفوظ کنسرٹ نہیں",
+    llmReplyLabel: "LLM کا جواب",
   },
   id: {
     hideChats: "Sembunyikan obrolan",
@@ -329,6 +336,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "Tampilkan konser",
     saveConcert: "Simpan konser",
     noSavedConcerts: "Belum ada konser tersimpan",
+    llmReplyLabel: "Balasan LLM",
   },
   es: {
     hideChats: "Ocultar chats",
@@ -353,6 +361,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "Mostrar conciertos",
     saveConcert: "Guardar concierto",
     noSavedConcerts: "Aún no hay conciertos guardados",
+    llmReplyLabel: "Respuesta del LLM",
   },
   de: {
     hideChats: "Chats ausblenden",
@@ -377,6 +386,7 @@ const CHAT_UI_TEXT: Record<
     showConcerts: "Konzerte anzeigen",
     saveConcert: "Konzert speichern",
     noSavedConcerts: "Noch keine Konzerte gespeichert",
+    llmReplyLabel: "LLM-Antwort",
   },
 };
 
@@ -554,7 +564,7 @@ export function ChatPage({ locale }: ChatPageProps) {
     const created = createChat();
     let targetId = created.id;
     if (text) {
-      const next = sendUserPrompt(created.id, text);
+      const next = sendUserPrompt(created.id, text, locale);
       if (next) targetId = next.id;
     }
     refresh(targetId);
@@ -564,7 +574,7 @@ export function ChatPage({ locale }: ChatPageProps) {
 
   function onSendPrompt(): void {
     if (!activeChat || !prompt.trim()) return;
-    const next = sendUserPrompt(activeChat.id, prompt.trim());
+    const next = sendUserPrompt(activeChat.id, prompt.trim(), locale);
     if (next) {
       refresh(next.id);
       setPrompt("");
@@ -722,14 +732,18 @@ export function ChatPage({ locale }: ChatPageProps) {
         ) : (
           <>
             <div className={styles.messages}>
-              {activeChat.messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`${styles.bubble} ${m.role === "user" ? styles.user : styles.assistant}`}
-                >
-                  {m.content}
-                </div>
-              ))}
+              {activeChat.messages.map((m) =>
+                m.role === "assistant" ? (
+                  <div key={m.id} className={`${styles.bubble} ${styles.assistant}`}>
+                    <div className={styles["bubble-llm-label"]}>{ui.llmReplyLabel}</div>
+                    <div className={styles["bubble-llm-field"]}>{m.content}</div>
+                  </div>
+                ) : (
+                  <div key={m.id} className={`${styles.bubble} ${styles.user}`}>
+                    {m.content}
+                  </div>
+                )
+              )}
             </div>
 
             <div className={styles.composer}>

@@ -241,6 +241,27 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.bubble-llm-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.bubble-llm-field {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border-soft);
+  background: rgba(7, 10, 16, 0.45);
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: rgba(232, 234, 242, 0.95);
+  white-space: pre-wrap;
+}
+
 .composer {
   display: grid;
   grid-template-columns: 1fr auto;

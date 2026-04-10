@@ -79,6 +79,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "Enter a valid email address.",
     auth_err_login: "Invalid username/email or password.",
     auth_err_generic: "Something went wrong. Try again.",
+    chat_llm_reply:
+      "Here's my reply to you: I assembled a concert of {count} tracks in an order that shapes energy and flow. You can drag to reorder below or send another message to refine the vibe.",
   },
   ru: {
     brand: "Conce Music AI",
@@ -155,6 +157,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "Укажите корректный email.",
     auth_err_login: "Неверный логин/почта или пароль.",
     auth_err_generic: "Не получилось. Попробуйте снова.",
+    chat_llm_reply:
+      "Отвечаю на ваш запрос: я собрал концерт из {count} треков — порядок подобран под динамику сета. Ниже можно перетаскивать треки или написать новое сообщение, чтобы уточнить настроение.",
   },
   tr: {
     brand: "Conce Music AI",
@@ -231,6 +235,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "Geçerli bir e-posta girin.",
     auth_err_login: "Kullanıcı adı/e-posta veya şifre hatalı.",
     auth_err_generic: "Bir sorun oldu. Tekrar deneyin.",
+    chat_llm_reply:
+      "Size yanıtım: İsteğinize göre {count} parçalık bir konser sırası kurdum; enerji akışına uygun. Aşağıdan sırayı sürükleyerek değiştirebilir veya ince ayar için yeni mesaj gönderebilirsiniz.",
   },
   hi: {
     brand: "Conce Music AI",
@@ -307,6 +313,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "वैध ईमेल दर्ज करें।",
     auth_err_login: "यूज़रनेम/ईमेल या पासवर्ड गलत है।",
     auth_err_generic: "कुछ गलत हुआ। फिर कोशिश करें।",
+    chat_llm_reply:
+      "आपके लिए मेरा उत्तर: मैंने {count} ट्रैक्स का एक कॉन्सर्ट क्रम बनाया है — ऊर्जा और बहाव के हिसाब से। नीचे क्रम बदल सकते हैं या नया संदेश भेजकर वाइब निखार सकते हैं।",
   },
   zh: {
     brand: "Conce Music AI",
@@ -381,6 +389,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "请输入有效的邮箱地址。",
     auth_err_login: "用户名/邮箱或密码错误。",
     auth_err_generic: "出错了，请重试。",
+    chat_llm_reply:
+      "这是对您的回复：我已根据您的描述排好一场 {count} 首歌的演出顺序，兼顾能量起伏与衔接。您可以在下方拖拽调整顺序，或继续发消息细化氛围。",
   },
   ur: {
     brand: "Conce Music AI",
@@ -457,6 +467,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "درست ای میل درج کریں۔",
     auth_err_login: "صارف نام/ای میل یا پاس ورڈ غلط ہے۔",
     auth_err_generic: "کچھ غلط ہوا۔ دوبارہ کوشش کریں۔",
+    chat_llm_reply:
+      "آپ کے لیے میرا جواب: میں نے {count} ٹریکس کا ایک کنسرٹ ترتیب دیا ہے — توانائی اور بہاؤ کے مطابق۔ نیچے گھسیٹ کر ترتیب بدلیں یا مزید پیغام بھیج کر ماحول بہتر بنائیں۔",
   },
   id: {
     brand: "Conce Music AI",
@@ -533,6 +545,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "Masukkan alamat email yang valid.",
     auth_err_login: "Nama pengguna/email atau kata sandi salah.",
     auth_err_generic: "Terjadi kesalahan. Coba lagi.",
+    chat_llm_reply:
+      "Ini balasan untuk Anda: saya menyusun konser {count} lagu dengan urutan yang membentuk alur energi. Anda bisa menyeret untuk mengurutkan ulang di bawah atau mengirim pesan baru untuk menyempurnakan suasana.",
   },
   es: {
     brand: "Conce Music AI",
@@ -609,6 +623,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "Introduce un correo válido.",
     auth_err_login: "Usuario/correo o contraseña incorrectos.",
     auth_err_generic: "Algo salió mal. Inténtalo de nuevo.",
+    chat_llm_reply:
+      "Te respondo: armé un concierto de {count} temas en un orden que marca energía y flujo. Puedes reordenar abajo o enviar otro mensaje para afinar el ambiente.",
   },
   de: {
     brand: "Conce Music AI",
@@ -685,6 +701,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_invalid_email: "Bitte eine gültige E-Mail eingeben.",
     auth_err_login: "Benutzername/E-Mail oder Passwort falsch.",
     auth_err_generic: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+    chat_llm_reply:
+      "Meine Antwort an dich: Ich habe ein Konzert mit {count} Tracks in einer Reihenfolge gebaut, die Energie und Fluss unterstützt. Unten kannst du per Drag & Drop sortieren oder eine neue Nachricht schicken, um die Stimmung zu verfeinern.",
   },
 };
 

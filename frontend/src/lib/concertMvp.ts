@@ -38,6 +38,8 @@ export type ChatRecord = {
   updatedAt: string;
 };
 
+import { t, type Locale } from "./i18n";
+
 const STORAGE_KEY = "conce-mvp-chats-v1";
 const DEFAULT_TARGET_COUNT = 10;
 
@@ -207,7 +209,7 @@ function parsePrompt(prompt: string): { words: string[]; desiredEnergy: number }
   return { words, desiredEnergy };
 }
 
-export function sendUserPrompt(chatId: string, prompt: string): ChatRecord | null {
+export function sendUserPrompt(chatId: string, prompt: string, locale: Locale = "en"): ChatRecord | null {
   const chats = listChats();
   const idx = chats.findIndex((c) => c.id === chatId);
   if (idx < 0) return null;
@@ -237,7 +239,7 @@ export function sendUserPrompt(chatId: string, prompt: string): ChatRecord | nul
   const assistantMessage: ChatMessage = {
     id: uid("msg"),
     role: "assistant",
-    content: `Готово: собрал концерт из ${concert.orderedTrackIds.length} треков.`,
+    content: t(locale, "chat_llm_reply", { count: concert.orderedTrackIds.length }),
     createdAt: ts,
     concertVersion: version,
   };
