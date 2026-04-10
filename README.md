@@ -103,6 +103,8 @@
 
 ### 5.1 Spotify Web API (обязательно)
 
+**Redirect URI (зафиксировано):** `http://127.0.0.1:8000/api/v1/auth/spotify/callback` — этот же URL регистрируется в Spotify Developer Dashboard и передаётся в `SPOTIFY_REDIRECT_URI` на бэкенде (должен совпадать посимвольно с тем, что Spotify вернёт в OAuth).
+
 **Scopes (минимально разумный набор — уточнить под UX):**
 
 - `playlist-read-private`, `playlist-read-collaborative` — читать плейлисты пользователя.

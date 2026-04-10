@@ -2,18 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from llm.cache import SQLiteTrackCache
-from llm.client import LLMClient
 from llm.models import ChatContext, TrackInput
 from llm.service import LLMService
 from optimizer.service import CandidateTrack, optimize_order
-from spotify.client import SpotifyClientMock, SpotifyTrack
-
-
-class _FallbackTransport:
-    def complete(self, prompt: str, timeout_seconds: float) -> str:
-        _ = (prompt, timeout_seconds)
-        raise TimeoutError("mock transport forces fallback mode")
+from spotify.client import SpotifyTrack
 
 
 @dataclass
@@ -23,12 +15,9 @@ class PipelineResult:
 
 
 class ConcertPipeline:
-    def __init__(self, db_path: str) -> None:
-        self.spotify = SpotifyClientMock()
-        self.llm = LLMService(
-            client=LLMClient(transport=_FallbackTransport()),
-            cache=SQLiteTrackCache(db_path),
-        )
+    def __init__(self, spotify: object, llm: LLMService) -> None:
+        self.spotify = spotify
+        self.llm = llm
 
     def run(
         self,

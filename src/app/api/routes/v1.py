@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
@@ -21,42 +22,93 @@ from app.api.schemas import (
     MessageDTO,
     PoolCreateRequest,
     PoolDeleteRequest,
+    ProvidersStatusDTO,
     SpotifyPlaylistDTO,
     TokenDTO,
     UserDTO,
 )
 from app.core.config import settings
-from app.core.security import create_access_token, encrypt_secret
+from app.core.oauth_state import consume_state, issue_state
+from app.core.security import create_access_token, decrypt_secret, encrypt_secret
 from app.db.models import Chat, ChatPoolTrack, Concert, Message, User
 from app.db.session import get_db
-from app.services.pipeline import ConcertPipeline
-from spotify.client import SpotifyClientMock
+from app.services.providers import get_concert_pipeline
+from spotify.factory import build_spotify_catalog
+from spotify.oauth import exchange_code_for_tokens, fetch_spotify_me, spotify_authorize_url
 
 router = APIRouter(prefix=settings.api_prefix)
 
 
+@router.get("/providers/status", response_model=ProvidersStatusDTO)
+def providers_status() -> ProvidersStatusDTO:
+    from llm.transport_factory import build_llm_transport
+
+    _, llm_label = build_llm_transport(settings)
+    safe_llm: Literal["yandex", "mock"] = "yandex" if llm_label == "yandex" else "mock"
+    return ProvidersStatusDTO(
+        provider_mode=settings.provider_mode,
+        llm=safe_llm,
+        yandex_configured=settings.yandex_credentials_ready(),
+        spotify_oauth_configured=settings.spotify_oauth_configured(),
+    )
+
+
 @router.get("/auth/spotify/login", response_model=AuthLoginResponse)
 def auth_spotify_login() -> AuthLoginResponse:
-    return AuthLoginResponse(
-        auth_url="https://accounts.spotify.com/authorize?client_id=mock&response_type=code",
-        state="mock-state",
-        provider_mode=settings.provider_mode,
-    )
+    if settings.spotify_oauth_configured():
+        state = issue_state()
+        auth_url = spotify_authorize_url(
+            client_id=settings.spotify_client_id,
+            redirect_uri=settings.spotify_redirect_uri,
+            scopes=settings.spotify_scopes,
+            state=state,
+        )
+    else:
+        state = "mock-state"
+        auth_url = "https://accounts.spotify.com/authorize?client_id=mock&response_type=code"
+    return AuthLoginResponse(auth_url=auth_url, state=state, provider_mode=settings.provider_mode)
 
 
 @router.post("/auth/spotify/callback", response_model=AuthCallbackResponse)
 def auth_spotify_callback(payload: AuthCallbackRequest, db: Session = Depends(get_db)) -> AuthCallbackResponse:
-    spotify_user_id = f"mock_{payload.code}"
+    if settings.spotify_oauth_configured():
+        if not consume_state(payload.state):
+            raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+        try:
+            tokens = exchange_code_for_tokens(settings, payload.code)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=400, detail="Spotify token exchange failed") from exc
+        access = tokens["access_token"]
+        refresh = tokens.get("refresh_token") or ""
+        if not refresh:
+            raise HTTPException(status_code=400, detail="Spotify did not return refresh_token")
+        try:
+            profile = fetch_spotify_me(settings, access)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=400, detail="Spotify profile request failed") from exc
+        spotify_user_id = profile["id"]
+        email = profile.get("email") or f"{spotify_user_id}@users.spotify.com"
+        refresh_enc = encrypt_secret(refresh)
+    else:
+        if payload.state != "mock-state":
+            raise HTTPException(status_code=400, detail="Invalid OAuth state")
+        spotify_user_id = f"mock_{payload.code}"
+        email = f"{spotify_user_id}@mock.local"
+        refresh_enc = encrypt_secret("mock-refresh-token")
+
     user = db.scalar(select(User).where(User.spotify_user_id == spotify_user_id))
     if not user:
         user = User(
             spotify_user_id=spotify_user_id,
-            email=f"{spotify_user_id}@mock.local",
-            refresh_token_encrypted=encrypt_secret("mock-refresh-token"),
+            email=email,
+            refresh_token_encrypted=refresh_enc,
         )
         db.add(user)
-        db.commit()
-        db.refresh(user)
+    else:
+        user.email = email
+        user.refresh_token_encrypted = refresh_enc
+    db.commit()
+    db.refresh(user)
     token = create_access_token(str(user.id))
     return AuthCallbackResponse(
         token=TokenDTO(access_token=token),
@@ -167,7 +219,7 @@ def post_message(
     db.add(user_message)
     db.flush()
 
-    pipeline = ConcertPipeline(settings.llm_cache_db_path)
+    pipeline = get_concert_pipeline(settings, current_user)
     result = pipeline.run(
         user_text=payload.content,
         chat_id=chat.id,
@@ -266,8 +318,8 @@ def list_concerts(chat_id: int, db: Session = Depends(get_db), current_user: Use
 
 @router.get("/spotify/playlists", response_model=list[SpotifyPlaylistDTO])
 def spotify_playlists(current_user: User = Depends(get_current_user)) -> list[SpotifyPlaylistDTO]:
-    _ = current_user
-    spotify = SpotifyClientMock()
+    refresh_plain = decrypt_secret(current_user.refresh_token_encrypted)
+    spotify, _ = build_spotify_catalog(settings, refresh_plain)
     return [SpotifyPlaylistDTO(id=p["id"], name=p["name"]) for p in spotify.get_user_playlists()]
 
 
@@ -281,7 +333,9 @@ def add_pool_tracks(
     chat = _get_chat_or_404(db, current_user.id, chat_id)
     source_ids = list(payload.track_ids)
     if payload.playlist_id:
-        source_ids.extend([t.spotify_track_id for t in SpotifyClientMock().get_tracks_for_playlist(payload.playlist_id)])
+        refresh_plain = decrypt_secret(current_user.refresh_token_encrypted)
+        spotify, _ = build_spotify_catalog(settings, refresh_plain)
+        source_ids.extend([t.spotify_track_id for t in spotify.get_tracks_for_playlist(payload.playlist_id)])
     source_ids = list(dict.fromkeys(source_ids))[:300]
     for track_id in source_ids:
         exists = db.scalar(

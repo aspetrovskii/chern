@@ -17,6 +17,15 @@ class AuthLoginResponse(BaseModel):
     provider_mode: str
 
 
+class ProvidersStatusDTO(BaseModel):
+    """Сводка доступности внешних провайдеров (без пользовательских токенов)."""
+
+    provider_mode: str
+    llm: Literal["yandex", "mock"]
+    yandex_configured: bool
+    spotify_oauth_configured: bool
+
+
 class AuthCallbackRequest(BaseModel):
     code: str = Field(min_length=1)
     state: str = Field(min_length=1)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import time
 from dataclasses import dataclass
 from typing import Protocol
@@ -16,6 +17,7 @@ class RetryPolicy:
     attempts: int = 3
     timeout_seconds: float = 10.0
     base_backoff_seconds: float = 0.25
+    max_jitter_seconds: float = 0.35
 
 
 class LLMClient:
@@ -36,7 +38,9 @@ class LLMClient:
                 last_error = exc
                 if attempt == self.retry_policy.attempts:
                     break
-                time.sleep(self.retry_policy.base_backoff_seconds * attempt)
+                backoff = self.retry_policy.base_backoff_seconds * (2 ** (attempt - 1))
+                jitter = random.uniform(0.0, max(0.0, self.retry_policy.max_jitter_seconds))
+                time.sleep(backoff + jitter)
         raise RuntimeError(f"LLM request failed after retries: {last_error}") from last_error
 
 
