@@ -32,6 +32,8 @@ class Settings(BaseSettings):
         "user-read-email user-read-private "
         "streaming user-read-playback-state user-modify-playback-state"
     )
+    # Optional ISO 3166-1 alpha-2 (e.g. US, GB). Improves search/recommendations availability.
+    spotify_market: str = ""
 
     yandex_completion_url: str = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     # Full modelUri, e.g. gpt://b1g.../yandexgpt/rc — preferred.
