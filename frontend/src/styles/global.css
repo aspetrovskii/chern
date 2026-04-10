@@ -52,6 +52,11 @@ body {
   background-color: #080809;
 }
 
+body.route-chat {
+  height: 100vh;
+  overflow: hidden;
+}
+
 body::before,
 body::after {
   content: "";
@@ -132,6 +137,11 @@ body::after {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+body.route-chat #app {
+  height: 100vh;
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

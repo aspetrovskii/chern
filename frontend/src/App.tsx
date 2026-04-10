@@ -40,12 +40,24 @@ function AppRoutes() {
 
   const path = location.pathname;
   const isAuth = path === "/auth";
+  const isChat = path === "/chat";
+
+  useEffect(() => {
+    const cls = "route-chat";
+    if (isChat) {
+      document.body.classList.add(cls);
+      return () => document.body.classList.remove(cls);
+    }
+    document.body.classList.remove(cls);
+    return undefined;
+  }, [isChat]);
 
   const mainClass = [
     layoutStyles["main-area"],
-    layoutStyles["main-area--with-player"],
-    playerCollapsed ? layoutStyles["main-area--with-player-collapsed"] : "",
+    !isChat ? layoutStyles["main-area--with-player"] : "",
+    !isChat && playerCollapsed ? layoutStyles["main-area--with-player-collapsed"] : "",
     isAuth ? layoutStyles["main-area--auth"] : "",
+    isChat ? layoutStyles["main-area--chat"] : "",
   ]
     .filter(Boolean)
     .join(" ");
