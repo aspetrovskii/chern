@@ -83,6 +83,34 @@ class LLMService:
             fallback_count=self._fallback_count,
         )
 
+    def generate_playlist(
+        self,
+        user_text: str,
+        chat_context: ChatContext,
+        candidates: list[TrackInput],
+    ) -> list[str]:
+        if not candidates:
+            return []
+
+        intent = self.parse_user_intent(user_text, chat_context)
+        tagged_items = [(item, self.tag_track(item)) for item in candidates]
+
+        scored: list[tuple[TrackInput, TrackTagsV1, float]] = []
+        excluded = {artist.strip().lower() for artist in intent.exclude_artists if artist.strip()}
+        for item, tags in tagged_items:
+            if _is_excluded(item, excluded):
+                continue
+            score = _base_relevance_score(intent, tags)
+            scored.append((item, tags, score))
+
+        if not scored:
+            scored = [(item, tags, _base_relevance_score(intent, tags)) for item, tags in tagged_items]
+
+        scored.sort(key=lambda row: row[2], reverse=True)
+        top = scored[: chat_context.target_track_count]
+        ordered = _order_by_arc(intent.mood_arc, top, intent.energy_target)
+        return [item.spotify_track_id for item, _tags, _score in ordered]
+
     def _fallback_intent(self, text: str) -> IntentV1:
         return IntentV1(
             intent_text=text[:300] if text else "music request",
@@ -168,3 +196,73 @@ def _clamp01(value: Any) -> float:
     if numeric > 1.0:
         return 1.0
     return numeric
+
+
+def _artist_names(track_input: TrackInput) -> list[str]:
+    artists = track_input.raw_metadata.get("artists", [])
+    if isinstance(artists, str):
+        return [artists]
+    if not isinstance(artists, list):
+        return []
+    names: list[str] = []
+    for artist in artists:
+        if isinstance(artist, dict):
+            value = artist.get("name", "")
+        else:
+            value = str(artist)
+        value = str(value).strip()
+        if value:
+            names.append(value)
+    return names
+
+
+def _is_excluded(track_input: TrackInput, excluded_artists: set[str]) -> bool:
+    if not excluded_artists:
+        return False
+    for name in _artist_names(track_input):
+        if name.lower() in excluded_artists:
+            return True
+    return False
+
+
+def _base_relevance_score(intent: IntentV1, tags: TrackTagsV1) -> float:
+    genre_overlap = 0.0
+    if intent.genres:
+        overlap = len(set(intent.genres).intersection(tags.genre_tags))
+        genre_overlap = overlap / max(1, len(intent.genres))
+
+    energy_alignment = 1.0 - abs(tags.mood_scores.energy - intent.energy_target)
+    drive_alignment = 1.0 - abs(tags.mood_scores.drive - intent.energy_target)
+    confidence = tags.confidence
+
+    return (0.45 * genre_overlap) + (0.3 * energy_alignment) + (0.15 * drive_alignment) + (0.1 * confidence)
+
+
+def _order_by_arc(
+    mood_arc: str,
+    scored: list[tuple[TrackInput, TrackTagsV1, float]],
+    energy_target: float,
+) -> list[tuple[TrackInput, TrackTagsV1, float]]:
+    if mood_arc == "build_up":
+        return sorted(scored, key=lambda row: row[1].mood_scores.energy)
+    if mood_arc == "peak_then_calm":
+        ordered = sorted(scored, key=lambda row: row[1].mood_scores.energy)
+        mid = len(ordered) // 2
+        return ordered[:mid] + list(reversed(ordered[mid:]))
+    if mood_arc == "wave":
+        ordered = sorted(scored, key=lambda row: row[1].mood_scores.energy)
+        low, high = 0, len(ordered) - 1
+        wave: list[tuple[TrackInput, TrackTagsV1, float]] = []
+        pick_high = False
+        while low <= high:
+            if pick_high:
+                wave.append(ordered[high])
+                high -= 1
+            else:
+                wave.append(ordered[low])
+                low += 1
+            pick_high = not pick_high
+        return wave
+
+    # flat/default: keep tracks around target energy.
+    return sorted(scored, key=lambda row: abs(row[1].mood_scores.energy - energy_target))

@@ -105,6 +105,72 @@ class LLMServiceTests(unittest.TestCase):
         self.assertIn("love", tags.theme_tags)
         self.assertGreaterEqual(tags.mood_scores.melancholy, 0.7)
 
+    def test_generate_playlist_returns_ordered_track_ids(self) -> None:
+        intent_payload = {
+            "schema_version": "intent-v1",
+            "intent_text": "energetic rock",
+            "genres": ["rock"],
+            "mood_arc": "build_up",
+            "energy_target": 0.8,
+            "exclude_artists": ["artist x"],
+            "language_detected": "en",
+            "confidence": 0.9,
+        }
+        track1_payload = {
+            "schema_version": "track-tags-v1",
+            "genre_tags": ["rock"],
+            "theme_tags": ["road"],
+            "mood_scores": {"energy": 0.2, "drive": 0.3, "melancholy": 0.4},
+            "confidence": 0.8,
+        }
+        track2_payload = {
+            "schema_version": "track-tags-v1",
+            "genre_tags": ["rock"],
+            "theme_tags": ["live"],
+            "mood_scores": {"energy": 0.9, "drive": 0.9, "melancholy": 0.1},
+            "confidence": 0.85,
+        }
+        track3_payload = {
+            "schema_version": "track-tags-v1",
+            "genre_tags": ["rock"],
+            "theme_tags": ["night"],
+            "mood_scores": {"energy": 0.5, "drive": 0.5, "melancholy": 0.3},
+            "confidence": 0.82,
+        }
+        responses = [
+            json.dumps(intent_payload),
+            json.dumps(track1_payload),
+            json.dumps(track2_payload),
+            json.dumps(track3_payload),
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            transport = FakeTransport(responses=responses)
+            service = self._service(transport, f"{tmp}/test.db")
+            candidates = [
+                TrackInput(
+                    spotify_track_id="t1",
+                    raw_metadata={"name": "Low Start", "artists": [{"name": "Artist A"}]},
+                    audio_features={"energy": 0.2},
+                ),
+                TrackInput(
+                    spotify_track_id="t2",
+                    raw_metadata={"name": "Peak Song", "artists": [{"name": "Artist B"}]},
+                    audio_features={"energy": 0.9},
+                ),
+                TrackInput(
+                    spotify_track_id="t3",
+                    raw_metadata={"name": "Excluded", "artists": [{"name": "Artist X"}]},
+                    audio_features={"energy": 0.5},
+                ),
+            ]
+            ordered = service.generate_playlist(
+                user_text="need energetic rock",
+                chat_context=ChatContext(chat_id="c1", message_id="m1", request_id="r1", target_track_count=10),
+                candidates=candidates,
+            )
+
+        self.assertEqual(ordered, ["t1", "t2"])
+
 
 if __name__ == "__main__":
     unittest.main()
