@@ -7,6 +7,7 @@ import { HomePage } from "./components/Home/HomePage";
 import { HelpPage } from "./components/Help/HelpPage";
 import { AuthPage } from "./components/Auth/AuthPage";
 import { ChatPage } from "./components/Chat/ChatPage";
+import { SavedConcertsPage } from "./components/SavedConcerts/SavedConcertsPage";
 import { NowPlaying } from "./components/Home/NowPlaying";
 import layoutStyles from "./components/MainLayout.module.css";
 
@@ -76,6 +77,7 @@ function AppRoutes() {
             }
           />
           <Route path="/chat" element={<ChatPage locale={locale} />} />
+          <Route path="/saved-concerts" element={<SavedConcertsPage locale={locale} />} />
           <Route path="/help" element={<HelpPage locale={locale} />} />
           <Route path="/auth" element={<AuthPage locale={locale} />} />
         </Routes>

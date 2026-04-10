@@ -51,6 +51,13 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "Send",
     help_thanks: "Thank you! We will process your request shortly.",
     nav_sign_in: "Sign in",
+    nav_saved_concerts: "Saved concerts",
+    saved_search_ph: "Search saved concerts",
+    saved_empty: "No saved concerts yet",
+    saved_nomatch: "No saved concerts match your search.",
+    saved_rename_aria: "Rename saved concert",
+    saved_dblclick: "Double-click to rename",
+    saved_open_chat: "Open in chat",
     nav_sign_out: "Sign out",
     auth_title_login: "Sign in",
     auth_title_register: "Create account",
@@ -81,6 +88,36 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "Something went wrong. Try again.",
     chat_llm_reply:
       "Here's my reply to you: I assembled a concert of {count} tracks in an order that shapes energy and flow. You can drag to reorder below or send another message to refine the vibe.",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
+    pool_panel_title: "Track pool",
+    pool_hide: "Hide pool",
+    pool_show: "Show pool",
+    pool_mode: "Chat mode",
+    pool_mode_fixed: "Fixed playlist pool",
+    pool_mode_discovery: "Discovery (full demo catalog)",
+    pool_source: "Source playlist (mock)",
+    pool_load_from_source: "Load tracks from source",
+    pool_add_by_id: "Add to pool by id",
+    pool_id_playlist: "Playlist id",
+    pool_id_album: "Album id",
+    pool_id_artist: "Artist id",
+    pool_id_tracks: "Track ids",
+    pool_ph_playlist: "e.g. pl_night_drive",
+    pool_ph_album: "e.g. al_echo_lp1",
+    pool_ph_artist: "e.g. ar_razor",
+    pool_ph_tracks: "t001, t002, …",
+    pool_add_playlist: "Add playlist",
+    pool_add_album: "Add album",
+    pool_add_artist: "Add artist",
+    pool_add_tracks: "Add tracks",
+    pool_rebuild: "Rebuild concert",
+    pool_empty_fixed: "Fixed pool mode needs tracks — pick a source playlist and load, or add ids.",
+    pool_tracks_in_pool: "Tracks in pool",
+    pool_no_chat: "Open or create a chat to edit the pool.",
+    pool_demo_hint: "Demo ids: playlists pl_night_drive, albums al_echo_lp1, artists ar_razor.",
+    pool_unknown: "Nothing matched that id.",
+    pool_busy: "Working…",
   },
   ru: {
     brand: "Conce Music AI",
@@ -130,6 +167,13 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "Отправить",
     help_thanks: "Спасибо! Мы обработаем ваш запрос в ближайшее время.",
     nav_sign_in: "Войти",
+    nav_saved_concerts: "Сохранённые концерты",
+    saved_search_ph: "Поиск по сохранённым концертам",
+    saved_empty: "Пока нет сохранённых концертов",
+    saved_nomatch: "Нет концертов по этому запросу.",
+    saved_rename_aria: "Переименовать сохранённый концерт",
+    saved_dblclick: "Дважды щёлкните, чтобы переименовать",
+    saved_open_chat: "Открыть в чате",
     nav_sign_out: "Выйти",
     auth_title_login: "Вход",
     auth_title_register: "Регистрация",
@@ -159,6 +203,37 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "Не получилось. Попробуйте снова.",
     chat_llm_reply:
       "Отвечаю на ваш запрос: я собрал концерт из {count} треков — порядок подобран под динамику сета. Ниже можно перетаскивать треки или написать новое сообщение, чтобы уточнить настроение.",
+    chat_pool_rebuild_reply:
+      "Пересобрал концерт из пула: {count} треков с упорядочиванием по динамике. Можно перетаскивать треки или править пул справа.",
+    pool_panel_title: "Пул треков",
+    pool_hide: "Скрыть пул",
+    pool_show: "Показать пул",
+    pool_mode: "Режим чата",
+    pool_mode_fixed: "Фиксированный пул (плейлист)",
+    pool_mode_discovery: "Discovery (весь демо-каталог)",
+    pool_source: "Исходный плейлист (mock)",
+    pool_load_from_source: "Загрузить треки из источника",
+    pool_add_by_id: "Добавить в пул по id",
+    pool_id_playlist: "Id плейлиста",
+    pool_id_album: "Id альбома",
+    pool_id_artist: "Id артиста",
+    pool_id_tracks: "Id треков",
+    pool_ph_playlist: "напр. pl_night_drive",
+    pool_ph_album: "напр. al_echo_lp1",
+    pool_ph_artist: "напр. ar_razor",
+    pool_ph_tracks: "t001, t002, …",
+    pool_add_playlist: "Добавить плейлист",
+    pool_add_album: "Добавить альбом",
+    pool_add_artist: "Добавить артиста",
+    pool_add_tracks: "Добавить треки",
+    pool_rebuild: "Пересобрать концерт",
+    pool_empty_fixed:
+      "В режиме фиксированного пула нужны треки — выберите плейлист-источник и загрузите или добавьте по id.",
+    pool_tracks_in_pool: "Треки в пуле",
+    pool_no_chat: "Откройте или создайте чат, чтобы править пул.",
+    pool_demo_hint: "Демо-id: плейлисты pl_night_drive, альбомы al_echo_lp1, артисты ar_razor.",
+    pool_unknown: "По этому id ничего не найдено.",
+    pool_busy: "Обработка…",
   },
   tr: {
     brand: "Conce Music AI",
@@ -208,6 +283,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "Gönder",
     help_thanks: "Teşekkürler! Talebinizi en kısa sürede işleme alacağız.",
     nav_sign_in: "Giriş",
+    nav_saved_concerts: "Saved concerts",
     nav_sign_out: "Çıkış",
     auth_title_login: "Giriş",
     auth_title_register: "Kayıt ol",
@@ -237,6 +313,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "Bir sorun oldu. Tekrar deneyin.",
     chat_llm_reply:
       "Size yanıtım: İsteğinize göre {count} parçalık bir konser sırası kurdum; enerji akışına uygun. Aşağıdan sırayı sürükleyerek değiştirebilir veya ince ayar için yeni mesaj gönderebilirsiniz.",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
   },
   hi: {
     brand: "Conce Music AI",
@@ -286,6 +364,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "भेजें",
     help_thanks: "धन्यवाद! हम जल्द ही आपके अनुरोध पर कार्रवाई करेंगे।",
     nav_sign_in: "साइन इन",
+    nav_saved_concerts: "Saved concerts",
     nav_sign_out: "साइन आउट",
     auth_title_login: "साइन इन",
     auth_title_register: "खाता बनाएँ",
@@ -315,6 +394,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "कुछ गलत हुआ। फिर कोशिश करें।",
     chat_llm_reply:
       "आपके लिए मेरा उत्तर: मैंने {count} ट्रैक्स का एक कॉन्सर्ट क्रम बनाया है — ऊर्जा और बहाव के हिसाब से। नीचे क्रम बदल सकते हैं या नया संदेश भेजकर वाइब निखार सकते हैं।",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
   },
   zh: {
     brand: "Conce Music AI",
@@ -362,6 +443,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "发送",
     help_thanks: "谢谢！我们会尽快处理您的请求。",
     nav_sign_in: "登录",
+    nav_saved_concerts: "Saved concerts",
     nav_sign_out: "退出",
     auth_title_login: "登录",
     auth_title_register: "注册账号",
@@ -391,6 +473,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "出错了，请重试。",
     chat_llm_reply:
       "这是对您的回复：我已根据您的描述排好一场 {count} 首歌的演出顺序，兼顾能量起伏与衔接。您可以在下方拖拽调整顺序，或继续发消息细化氛围。",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
   },
   ur: {
     brand: "Conce Music AI",
@@ -440,6 +524,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "بھیجیں",
     help_thanks: "شکریہ! ہم جلد آپ کی درخواست پر کارروائی کریں گے۔",
     nav_sign_in: "سائن ان",
+    nav_saved_concerts: "Saved concerts",
     nav_sign_out: "سائن آؤٹ",
     auth_title_login: "سائن ان",
     auth_title_register: "اکاؤنٹ بنائیں",
@@ -469,6 +554,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "کچھ غلط ہوا۔ دوبارہ کوشش کریں۔",
     chat_llm_reply:
       "آپ کے لیے میرا جواب: میں نے {count} ٹریکس کا ایک کنسرٹ ترتیب دیا ہے — توانائی اور بہاؤ کے مطابق۔ نیچے گھسیٹ کر ترتیب بدلیں یا مزید پیغام بھیج کر ماحول بہتر بنائیں۔",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
   },
   id: {
     brand: "Conce Music AI",
@@ -518,6 +605,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "Kirim",
     help_thanks: "Terima kasih! Kami akan memproses permintaan Anda segera.",
     nav_sign_in: "Masuk",
+    nav_saved_concerts: "Saved concerts",
     nav_sign_out: "Keluar",
     auth_title_login: "Masuk",
     auth_title_register: "Buat akun",
@@ -547,6 +635,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "Terjadi kesalahan. Coba lagi.",
     chat_llm_reply:
       "Ini balasan untuk Anda: saya menyusun konser {count} lagu dengan urutan yang membentuk alur energi. Anda bisa menyeret untuk mengurutkan ulang di bawah atau mengirim pesan baru untuk menyempurnakan suasana.",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
   },
   es: {
     brand: "Conce Music AI",
@@ -596,6 +686,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "Enviar",
     help_thanks: "¡Gracias! Procesaremos tu solicitud en breve.",
     nav_sign_in: "Iniciar sesión",
+    nav_saved_concerts: "Saved concerts",
     nav_sign_out: "Cerrar sesión",
     auth_title_login: "Iniciar sesión",
     auth_title_register: "Crear cuenta",
@@ -625,6 +716,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "Algo salió mal. Inténtalo de nuevo.",
     chat_llm_reply:
       "Te respondo: armé un concierto de {count} temas en un orden que marca energía y flujo. Puedes reordenar abajo o enviar otro mensaje para afinar el ambiente.",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
   },
   de: {
     brand: "Conce Music AI",
@@ -674,6 +767,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     help_submit: "Senden",
     help_thanks: "Danke! Wir bearbeiten deine Anfrage bald.",
     nav_sign_in: "Anmelden",
+    nav_saved_concerts: "Saved concerts",
     nav_sign_out: "Abmelden",
     auth_title_login: "Anmelden",
     auth_title_register: "Konto erstellen",
@@ -703,6 +797,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     auth_err_generic: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     chat_llm_reply:
       "Meine Antwort an dich: Ich habe ein Konzert mit {count} Tracks in einer Reihenfolge gebaut, die Energie und Fluss unterstützt. Unten kannst du per Drag & Drop sortieren oder eine neue Nachricht schicken, um die Stimmung zu verfeinern.",
+    chat_pool_rebuild_reply:
+      "Rebuilt the concert from your pool: {count} tracks ordered for flow. Drag to adjust or edit the pool on the right.",
   },
 };
 

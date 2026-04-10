@@ -4,18 +4,32 @@
  */
 import type { Locale } from "./i18n";
 import {
+  addTracksToPool as mvpAddTracksToPool,
+  candidateTracksForChat as mvpCandidateTracksForChat,
   createChat as mvpCreateChat,
   deleteChat as mvpDeleteChat,
   getTrackById as mvpGetTrackById,
   listChats as mvpListChats,
+  loadPoolFromSourcePlaylist as mvpLoadPoolFromSourcePlaylist,
+  rebuildConcertFromPool as mvpRebuildConcertFromPool,
+  removePoolTrack as mvpRemovePoolTrack,
+  replacePoolTracks as mvpReplacePoolTracks,
   sendUserPrompt as mvpSendUserPrompt,
+  setChatMode as mvpSetChatMode,
+  setSourceSpotifyPlaylist as mvpSetSourceSpotifyPlaylist,
   updateChatTitle as mvpUpdateChatTitle,
   updateConcertLabel as mvpUpdateConcertLabel,
   updateConcertOrder as mvpUpdateConcertOrder,
   updateChatTargetCount as mvpUpdateChatTargetCount,
+  type ChatMode,
   type ChatRecord,
   type Track,
 } from "./concertMvp";
+import {
+  loadSavedConcertsFromStorage,
+  persistSavedConcerts,
+  type SavedConcertItem,
+} from "./savedConcertsMvp";
 
 export async function apiListChats(): Promise<ChatRecord[]> {
   return Promise.resolve(mvpListChats());
@@ -38,6 +52,33 @@ export async function apiPatchChatTargetTrackCount(
   targetTrackCount: number
 ): Promise<ChatRecord | null> {
   return Promise.resolve(mvpUpdateChatTargetCount(chatId, targetTrackCount));
+}
+
+export async function apiPatchChatMode(chatId: string, mode: ChatMode): Promise<ChatRecord | null> {
+  return Promise.resolve(mvpSetChatMode(chatId, mode));
+}
+
+export async function apiPatchSourceSpotifyPlaylist(
+  chatId: string,
+  playlistId: string | null
+): Promise<ChatRecord | null> {
+  return Promise.resolve(mvpSetSourceSpotifyPlaylist(chatId, playlistId));
+}
+
+export async function apiPutPoolTrackIds(chatId: string, trackIds: string[]): Promise<ChatRecord | null> {
+  return Promise.resolve(mvpReplacePoolTracks(chatId, trackIds));
+}
+
+export async function apiPostPoolTrackIds(chatId: string, trackIds: string[]): Promise<ChatRecord | null> {
+  return Promise.resolve(mvpAddTracksToPool(chatId, trackIds));
+}
+
+export async function apiDeletePoolTrack(chatId: string, trackId: string): Promise<ChatRecord | null> {
+  return Promise.resolve(mvpRemovePoolTrack(chatId, trackId));
+}
+
+export async function apiPostLoadPoolFromLinkedPlaylist(chatId: string): Promise<ChatRecord | null> {
+  return Promise.resolve(mvpLoadPoolFromSourcePlaylist(chatId));
 }
 
 export async function apiPatchConcertOrder(
@@ -64,6 +105,28 @@ export async function apiPostChatPrompt(
   return Promise.resolve(mvpSendUserPrompt(chatId, prompt, locale));
 }
 
+export async function apiPostRebuildConcertFromPool(
+  chatId: string,
+  locale: Locale
+): Promise<ChatRecord | null> {
+  return Promise.resolve(mvpRebuildConcertFromPool(chatId, locale));
+}
+
 export async function apiGetTrackMeta(trackId: string): Promise<Track | null> {
   return Promise.resolve(mvpGetTrackById(trackId));
 }
+
+export async function apiGetCandidateTracks(chat: ChatRecord): Promise<Track[]> {
+  return Promise.resolve(mvpCandidateTracksForChat(chat));
+}
+
+export async function apiListSavedConcerts(): Promise<SavedConcertItem[]> {
+  return Promise.resolve(loadSavedConcertsFromStorage());
+}
+
+export async function apiPutSavedConcerts(items: SavedConcertItem[]): Promise<void> {
+  persistSavedConcerts(items);
+  return Promise.resolve();
+}
+
+export type { ChatMode, SavedConcertItem };

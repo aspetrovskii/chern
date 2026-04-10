@@ -17,6 +17,7 @@
 }
 
 .neo-glass-input {
+  box-sizing: border-box;
   width: 100%;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--glass-border);
@@ -28,6 +29,14 @@
   font: inherit;
   font-size: 0.98rem;
   box-shadow: var(--glass-inset), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.neo-glass-input:not(textarea) {
+  height: 2.75rem;
+  min-height: 2.75rem;
+  max-height: 2.75rem;
+  padding: 0 0.85rem;
+  line-height: 1.35;
 }
 
 .neo-glass-input::placeholder {

@@ -158,6 +158,9 @@ export function Header({ locale, onAuthChange }: HeaderProps) {
         <a className={headerStyles["nav-btn"]} href="#/chat">
           <span className={headerStyles["nav-text"]}>{t(locale, "nav_chat")}</span>
         </a>
+        <a className={headerStyles["nav-btn"]} href="#/saved-concerts">
+          <span className={headerStyles["nav-text"]}>{t(locale, "nav_saved_concerts")}</span>
+        </a>
         <a className={headerStyles["nav-btn"]} href="#/help">
           <span className={headerStyles["nav-text"]}>{t(locale, "nav_help")}</span>
         </a>
