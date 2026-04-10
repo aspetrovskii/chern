@@ -286,6 +286,7 @@ docker compose up --build
   - backend: `python -m pytest`
 - **Integration smoke**
   - backend: `python scripts/smoke_llm_pipeline.py`
+  - backend api: `python -m alembic upgrade head` + `python scripts/smoke_api.py`
   - frontend: `npm run smoke` (в каталоге `frontend`)
 
 CI workflow: `.github/workflows/quality-gates.yml`
