@@ -23,6 +23,17 @@
   box-sizing: border-box;
 }
 
+/* Hide visual scrollbars globally while preserving scrolling. */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 html {
   background: #080809;
 }
