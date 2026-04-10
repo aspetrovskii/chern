@@ -30,10 +30,18 @@ export type ConcertVersion = {
   updatedAt: string;
 };
 
+export type ChatMode = "fixed_pool" | "spotify_discovery";
+
 export type ChatRecord = {
   id: string;
   title: string;
   targetTrackCount: number;
+  /** Mode A/B from README — mock persists like backend `chats.mode`. */
+  mode: ChatMode;
+  /** Spotify playlist id when using a fixed source (mock ids from poolEditorMvp). */
+  sourceSpotifyPlaylistId: string | null;
+  /** Union of tracks available for candidate selection in fixed_pool mode. */
+  poolTrackIds: string[];
   messages: ChatMessage[];
   concerts: ConcertVersion[];
   createdAt: string;
@@ -41,6 +49,7 @@ export type ChatRecord = {
 };
 
 import { t, type Locale } from "./i18n";
+import { getTrackIdsForPlaylist } from "./poolEditorMvp";
 
 const STORAGE_KEY = "conce-mvp-chats-v1";
 const DEFAULT_TARGET_COUNT = 10;
@@ -71,12 +80,21 @@ function uid(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function normalizeChat(chat: ChatRecord): ChatRecord {
+  return {
+    ...chat,
+    mode: chat.mode ?? "spotify_discovery",
+    sourceSpotifyPlaylistId: chat.sourceSpotifyPlaylistId ?? null,
+    poolTrackIds: Array.isArray(chat.poolTrackIds) ? chat.poolTrackIds : [],
+  };
+}
+
 function safeParseChats(raw: string | null): ChatRecord[] {
   if (!raw) return [];
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as ChatRecord[];
+    return (parsed as ChatRecord[]).map(normalizeChat);
   } catch {
     return [];
   }
@@ -98,6 +116,9 @@ export function createChat(): ChatRecord {
     id: uid("chat"),
     title: "Новый чат",
     targetTrackCount: DEFAULT_TARGET_COUNT,
+    mode: "spotify_discovery",
+    sourceSpotifyPlaylistId: null,
+    poolTrackIds: [],
     messages: [],
     concerts: [],
     createdAt: ts,
@@ -158,6 +179,88 @@ export function updateChatTargetCount(chatId: string, targetTrackCount: number):
   chats[idx] = next;
   saveChats(chats);
   return next;
+}
+
+export function candidateTracksForChat(chat: ChatRecord): Track[] {
+  if (chat.mode === "fixed_pool" && chat.poolTrackIds.length > 0) {
+    const allowed = new Set(chat.poolTrackIds);
+    return TRACK_CATALOG.filter((t) => allowed.has(t.id));
+  }
+  return [...TRACK_CATALOG];
+}
+
+export function setChatMode(chatId: string, mode: ChatMode): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const ts = nowIso();
+  const next: ChatRecord = { ...chats[idx], mode, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
+}
+
+export function setSourceSpotifyPlaylist(chatId: string, playlistId: string | null): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const ts = nowIso();
+  const next: ChatRecord = { ...chats[idx], sourceSpotifyPlaylistId: playlistId, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
+}
+
+export function replacePoolTracks(chatId: string, trackIds: string[]): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const uniq = [...new Set(trackIds.filter(Boolean))];
+  const ts = nowIso();
+  const next: ChatRecord = { ...chats[idx], poolTrackIds: uniq, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
+}
+
+export function addTracksToPool(chatId: string, trackIds: string[]): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const chat = chats[idx];
+  const set = new Set(chat.poolTrackIds);
+  for (const id of trackIds) {
+    if (id) set.add(id);
+  }
+  const ts = nowIso();
+  const next: ChatRecord = { ...chat, poolTrackIds: [...set], updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
+}
+
+export function removePoolTrack(chatId: string, trackId: string): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const chat = chats[idx];
+  const nextIds = chat.poolTrackIds.filter((id) => id !== trackId);
+  const ts = nowIso();
+  const next: ChatRecord = { ...chat, poolTrackIds: nextIds, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
+}
+
+export function loadPoolFromSourcePlaylist(chatId: string): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const chat = chats[idx];
+  if (!chat.sourceSpotifyPlaylistId) return null;
+  const ids = getTrackIdsForPlaylist(chat.sourceSpotifyPlaylistId);
+  if (ids.length === 0) return null;
+  return replacePoolTracks(chatId, ids);
 }
 
 function scoreTrack(track: Track, promptWords: string[], desiredEnergy: number): number {
@@ -249,9 +352,12 @@ export function sendUserPrompt(chatId: string, prompt: string, locale: Locale = 
   const idx = chats.findIndex((c) => c.id === chatId);
   if (idx < 0) return null;
   const chat = chats[idx];
+  if (chat.mode === "fixed_pool" && chat.poolTrackIds.length === 0) return null;
+  const slice = candidateTracksForChat(chat);
+  if (slice.length === 0) return null;
   const ts = nowIso();
   const parsed = parsePrompt(prompt);
-  const scored = [...TRACK_CATALOG]
+  const scored = [...slice]
     .map((track) => ({ track, score: scoreTrack(track, parsed.words, parsed.desiredEnergy) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, Math.max(chat.targetTrackCount + 5, chat.targetTrackCount));
@@ -315,6 +421,50 @@ export function updateConcertOrder(
   chats[idx] = next;
   saveChats(chats);
   return next;
+}
+
+export function rebuildConcertFromPool(chatId: string, locale: Locale = "en"): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const chat = chats[idx];
+  if (chat.mode === "fixed_pool" && chat.poolTrackIds.length === 0) return null;
+  const slice = candidateTracksForChat(chat);
+  if (slice.length === 0) return null;
+  const lastUser = [...chat.messages].reverse().find((m) => m.role === "user");
+  const prompt = lastUser?.content ?? "";
+  const ts = nowIso();
+  const parsed = parsePrompt(prompt);
+  const scored = [...slice]
+    .map((track) => ({ track, score: scoreTrack(track, parsed.words, parsed.desiredEnergy) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.max(chat.targetTrackCount + 5, chat.targetTrackCount));
+  const optimized = simulatedAnnealing(scored.map((s) => s.track)).slice(0, chat.targetTrackCount);
+  const version = (chat.concerts.at(-1)?.version ?? 0) + 1;
+  const concert: ConcertVersion = {
+    version,
+    orderedTrackIds: optimized.map((tr) => tr.id),
+    orderSource: "optimizer",
+    prompt,
+    createdAt: ts,
+    updatedAt: ts,
+  };
+  const assistantMessage: ChatMessage = {
+    id: uid("msg"),
+    role: "assistant",
+    content: t(locale, "chat_pool_rebuild_reply", { count: concert.orderedTrackIds.length }),
+    createdAt: ts,
+    concertVersion: version,
+  };
+  const nextChat: ChatRecord = {
+    ...chat,
+    messages: [...chat.messages, assistantMessage],
+    concerts: [...chat.concerts, concert],
+    updatedAt: ts,
+  };
+  chats[idx] = nextChat;
+  saveChats(chats);
+  return nextChat;
 }
 
 export function getTrackById(trackId: string): Track | null {
