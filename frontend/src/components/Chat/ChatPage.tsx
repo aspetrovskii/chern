@@ -560,14 +560,6 @@ export function ChatPage({ locale }: ChatPageProps) {
                 {emptyHeadline}
               </h1>
               <div className={`${styles.composer} ${styles["composer-centered"]}`}>
-                <button
-                  type="button"
-                  className={`${styles.btn} ${styles["composer-plus"]}`}
-                  aria-label={ui.newChat}
-                  onClick={onCreateChat}
-                >
-                  +
-                </button>
                 <input
                   type="text"
                   value={prompt}

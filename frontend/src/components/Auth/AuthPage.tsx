@@ -5,6 +5,7 @@ import { getSessionUser, loginWithSpotify } from "../../lib/auth";
 import neoStyles from "../NeoSurface.module.css";
 import authStyles from "./AuthPage.module.css";
 import layoutStyles from "../MainLayout.module.css";
+import spotifyLogo from "../../assets/spotify-logo.png";
 
 type AuthPageProps = {
   locale: Locale;
@@ -41,13 +42,7 @@ export function AuthPage({ locale }: AuthPageProps) {
             onClick={onSpotifyLogin}
           >
             <span className={authStyles["auth-page__spotify-icon"]} aria-hidden="true">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" fill="currentColor" />
-                <path
-                  fill="#0b0b0c"
-                  d="M7.2 9.6a.9.9 0 0 1 .95-.84c2.8-.2 5.9.35 8.3 1.4a.9.9 0 1 1-.74 1.65c-2.1-.95-4.9-1.45-7.46-1.27A.9.9 0 0 1 7.2 9.6Zm1.05 3.1a.75.75 0 0 1 .81-.7c2.15-.14 4.46.25 6.2 1.05a.75.75 0 1 1-.62 1.36c-1.5-.68-3.54-1.03-5.48-.9a.75.75 0 0 1-.9-.81Zm.95 2.8a.65.65 0 0 1 .7-.62c1.65-.1 3.4.2 4.72.8a.65.65 0 1 1-.54 1.18c-1.1-.5-2.58-.76-3.98-.67a.65.65 0 0 1-.9-.69Z"
-                />
-              </svg>
+              <img src={spotifyLogo} alt="" />
             </span>
             <span>{t(locale, "auth_spotify_cta")}</span>
           </button>

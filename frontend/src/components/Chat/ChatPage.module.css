@@ -202,7 +202,7 @@
   display: grid;
   grid-template-rows: 1fr auto auto;
   gap: 0.9rem;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .messages {
@@ -238,10 +238,34 @@
 .composer input {
   width: 100%;
   border-radius: 999px;
-  border: 1px solid var(--glass-border-soft);
+  border: 1px solid var(--glass-border);
   padding: 0.7rem 1rem;
-  background: rgba(255, 255, 255, 0.04);
-  color: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(245, 246, 250, 0.96);
+  box-shadow: var(--glass-inset), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.composer input:focus,
+.composer input:focus-visible,
+.composer-centered input:focus,
+.composer-centered input:focus-visible {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.45);
+  box-shadow: var(--glass-inset), 0 0 0 2px rgba(129, 140, 248, 0.35);
+}
+
+.composer input:-webkit-autofill,
+.composer input:-webkit-autofill:hover,
+.composer input:-webkit-autofill:focus,
+.composer-centered input:-webkit-autofill,
+.composer-centered input:-webkit-autofill:hover,
+.composer-centered input:-webkit-autofill:focus {
+  -webkit-text-fill-color: rgba(245, 246, 250, 0.96);
+  box-shadow:
+    0 0 0 1000px rgba(17, 21, 34, 0.95) inset,
+    var(--glass-inset),
+    0 0 0 2px rgba(129, 140, 248, 0.3);
+  transition: background-color 9999s ease-out 0s;
 }
 
 .btn {
@@ -333,7 +357,7 @@
 }
 
 .composer-centered {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
   margin-top: 0;
   align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.13);
@@ -350,15 +374,6 @@
 
 .composer-centered input::placeholder {
   color: rgba(232, 234, 239, 0.62);
-}
-
-.composer-plus {
-  width: 2.8rem;
-  height: 2.8rem;
-  padding: 0;
-  border-radius: 999px;
-  font-size: 1.45rem;
-  line-height: 1;
 }
 
 .muted {
