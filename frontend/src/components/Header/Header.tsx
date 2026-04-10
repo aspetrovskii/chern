@@ -64,6 +64,7 @@ function LangDropdown({ locale }: LangDropdownProps) {
             alt=""
             decoding="async"
             loading="eager"
+            referrerPolicy="no-referrer"
           />
           <span className={`${headerStyles["lang-btn__label"]} ${headerStyles["nav-text"]}`}>
             {meta.label}
@@ -104,6 +105,7 @@ function LangDropdown({ locale }: LangDropdownProps) {
                 height={27}
                 alt=""
                 decoding="async"
+                referrerPolicy="no-referrer"
               />
               <span className={headerStyles["lang-option__label"]}>{m.label}</span>
             </button>

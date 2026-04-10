@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { t, type Locale } from "../../lib/i18n";
 import {
   addTracksToPool,
@@ -12,12 +12,13 @@ import {
   type ChatRecord,
 } from "../../lib/concertMvp";
 import {
+  fetchPlaylistSummaries,
+  fetchPlaylistTrackIds,
   getTrackIdsForAlbum,
   getTrackIdsForArtist,
-  getTrackIdsForPlaylist,
-  listMockPlaylists,
   parseCommaSeparatedTrackIds,
 } from "../../lib/poolEditorMvp";
+import headerStyles from "../Header/Header.module.css";
 import styles from "./ChatPage.module.css";
 
 type ChevronDir = "left" | "right";
@@ -48,6 +49,80 @@ function SidebarChevron({ direction }: { direction: ChevronDir }) {
   );
 }
 
+type PoolDropdownOption = { value: string; label: string };
+
+type PoolDropdownProps = {
+  ariaLabel: string;
+  value: string;
+  options: PoolDropdownOption[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+};
+
+function PoolGlassDropdown({ ariaLabel, value, options, onChange, disabled }: PoolDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = () => close();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("click", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, close]);
+
+  const current = options.find((o) => o.value === value) ?? options[0];
+  const shown = current?.label ?? "";
+
+  return (
+    <div
+      className={`${headerStyles["lang-dropdown"]} ${headerStyles["lang-dropdown--block"]} ${open ? headerStyles["lang-dropdown--open"] : ""}`}
+      data-dropdown=""
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        className={`${headerStyles["nav-btn"]} ${headerStyles["nav-btn--pool"]}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+      >
+        <span className={`${headerStyles["nav-text"]} ${styles["pool-dd-text"]}`}>{shown}</span>
+        <span className={headerStyles["nav-btn__chev"]} aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      <div className={headerStyles["lang-dropdown__panel"]} role="listbox" aria-label={ariaLabel}>
+        {options.map((opt) => (
+          <button
+            key={opt.value || "__none"}
+            type="button"
+            role="option"
+            aria-selected={opt.value === value}
+            className={`${headerStyles["lang-option"]}${opt.value === value ? ` ${headerStyles["lang-option--active"]}` : ""}`}
+            onClick={() => {
+              onChange(opt.value);
+              close();
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type PoolSidebarProps = {
   locale: Locale;
   activeChat: ChatRecord | null;
@@ -62,8 +137,30 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
   const [artistIdInput, setArtistIdInput] = useState("");
   const [trackIdsInput, setTrackIdsInput] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [playlistSummaries, setPlaylistSummaries] = useState<{ id: string; name: string }[]>([]);
 
-  const playlists = useMemo(() => listMockPlaylists(), []);
+  useEffect(() => {
+    let cancelled = false;
+    fetchPlaylistSummaries().then((rows) => {
+      if (!cancelled) setPlaylistSummaries(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const modeOptions: PoolDropdownOption[] = useMemo(
+    () => [
+      { value: "fixed_pool", label: t(locale, "pool_mode_fixed") },
+      { value: "spotify_discovery", label: t(locale, "pool_mode_discovery") },
+    ],
+    [locale]
+  );
+
+  const playlistOptions: PoolDropdownOption[] = useMemo(() => {
+    const none = { value: "", label: "—" };
+    return [none, ...playlistSummaries.map((p) => ({ value: p.id, label: p.name }))];
+  }, [playlistSummaries]);
 
   const clearFeedbackSoon = useCallback(() => {
     window.setTimeout(() => setFeedback(null), 4000);
@@ -82,10 +179,23 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
     [activeChat]
   );
 
+  const runAsync = useCallback(
+    async (fn: () => Promise<void>) => {
+      if (!activeChat) return;
+      setBusy(true);
+      try {
+        await fn();
+      } finally {
+        setBusy(false);
+      }
+    },
+    [activeChat]
+  );
+
   if (!activeChat) {
     return (
       <aside
-        className={`${styles.sidebar} ${open ? styles["sidebar-open"] : styles["sidebar-closed"]}`}
+        className={`${styles.sidebar} ${styles["sidebar--pool"]} ${open ? styles["sidebar-open"] : styles["sidebar-closed"]}`}
       >
         <div className={styles["sidebar-top"]}>
           <button
@@ -107,7 +217,9 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
   const chatId = activeChat.id;
 
   return (
-    <aside className={`${styles.sidebar} ${open ? styles["sidebar-open"] : styles["sidebar-closed"]}`}>
+    <aside
+      className={`${styles.sidebar} ${styles["sidebar--pool"]} ${open ? styles["sidebar-open"] : styles["sidebar-closed"]}`}
+    >
       <div className={styles["sidebar-top"]}>
         <button
           type="button"
@@ -122,61 +234,48 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
       </div>
 
       {open && (
-        <div className={`${styles["chat-groups"]} ${styles["pool-scroll"]}`}>
+        <div className={styles["pool-sidebar-inner"]}>
+          <div className={styles["pool-sidebar-fixed"]}>
           {busy && <p className={styles.muted}>{t(locale, "pool_busy")}</p>}
           {feedback && <p className={styles.muted}>{feedback}</p>}
 
-          <label className={styles["pool-field-label"]} htmlFor={`pool-mode-${chatId}`}>
-            {t(locale, "pool_mode")}
-          </label>
-          <select
-            id={`pool-mode-${chatId}`}
-            className={styles["pool-select"]}
+          <span className={styles["pool-field-label"]}>{t(locale, "pool_mode")}</span>
+          <PoolGlassDropdown
+            ariaLabel={t(locale, "pool_mode")}
             value={activeChat.mode}
+            options={modeOptions}
             disabled={busy}
-            onChange={(e) => {
-              const mode = e.target.value as ChatMode;
+            onChange={(v) => {
+              const mode = v as ChatMode;
               run(() => {
                 setChatMode(chatId, mode);
                 onRefresh();
               });
             }}
-          >
-            <option value="fixed_pool">{t(locale, "pool_mode_fixed")}</option>
-            <option value="spotify_discovery">{t(locale, "pool_mode_discovery")}</option>
-          </select>
+          />
 
-          <label className={styles["pool-field-label"]} htmlFor={`pool-src-${chatId}`}>
-            {t(locale, "pool_source")}
-          </label>
-          <select
-            id={`pool-src-${chatId}`}
-            className={styles["pool-select"]}
+          <span className={styles["pool-field-label"]}>{t(locale, "pool_source")}</span>
+          <PoolGlassDropdown
+            ariaLabel={t(locale, "pool_source")}
             value={activeChat.sourceSpotifyPlaylistId ?? ""}
+            options={playlistOptions}
             disabled={busy}
-            onChange={(e) => {
-              const v = e.target.value || null;
+            onChange={(v) => {
+              const pl = v || null;
               run(() => {
-                setSourceSpotifyPlaylist(chatId, v);
+                setSourceSpotifyPlaylist(chatId, pl);
                 onRefresh();
               });
             }}
-          >
-            <option value="">—</option>
-            {playlists.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          />
 
           <button
             type="button"
             className={`${styles.btn} ${styles["pool-action-btn"]}`}
             disabled={busy || !activeChat.sourceSpotifyPlaylistId}
             onClick={() => {
-              run(() => {
-                const next = loadPoolFromSourcePlaylist(chatId);
+              void runAsync(async () => {
+                const next = await loadPoolFromSourcePlaylist(chatId);
                 if (!next) {
                   setFeedback(t(locale, "pool_unknown"));
                   clearFeedbackSoon();
@@ -205,18 +304,18 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
               className={styles.btn}
               disabled={busy}
               onClick={() => {
-                const id = playlistIdInput.trim();
-                const ids = getTrackIdsForPlaylist(id);
-                if (ids.length === 0) {
-                  setFeedback(t(locale, "pool_unknown"));
-                  clearFeedbackSoon();
-                  return;
-                }
-                run(() => {
+                void runAsync(async () => {
+                  const id = playlistIdInput.trim();
+                  const ids = await fetchPlaylistTrackIds(id);
+                  if (ids.length === 0) {
+                    setFeedback(t(locale, "pool_unknown"));
+                    clearFeedbackSoon();
+                    return;
+                  }
                   addTracksToPool(chatId, ids);
                   onRefresh();
+                  setPlaylistIdInput("");
                 });
-                setPlaylistIdInput("");
               }}
             >
               {t(locale, "pool_add_playlist")}
@@ -340,7 +439,9 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
           >
             {t(locale, "pool_rebuild")}
           </button>
+          </div>
 
+          <div className={styles["pool-sidebar-scroll"]}>
           <p className={styles["pool-section-title"]}>
             {t(locale, "pool_tracks_in_pool")} ({activeChat.poolTrackIds.length})
           </p>
@@ -373,6 +474,7 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
               );
             })}
           </ul>
+          </div>
         </div>
       )}
     </aside>

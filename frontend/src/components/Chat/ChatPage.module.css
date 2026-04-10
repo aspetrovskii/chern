@@ -9,6 +9,17 @@
   overflow: hidden;
   background: transparent;
   box-shadow: none;
+  color: rgba(232, 234, 242, 0.94);
+}
+
+.chat-page .btn-icon,
+.chat-page .send-arrow {
+  color: rgba(232, 234, 242, 0.92);
+}
+
+.chat-page .btn-icon__glyph svg path,
+.chat-page .send-arrow__icon svg path {
+  stroke: rgba(232, 234, 242, 0.92);
 }
 
 .panel {
@@ -64,6 +75,42 @@
 
 .sidebar-closed .sidebar-top {
   justify-content: center;
+}
+
+/* Pool column: dropdown panels must not be clipped by scroll; list scrolls separately */
+.sidebar--pool {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pool-sidebar-inner {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.pool-sidebar-fixed {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+}
+
+.pool-sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.15rem 0.15rem 0.5rem 0;
+  margin-right: 0;
+  position: relative;
+  z-index: 0;
 }
 
 .new-chat-btn {
@@ -159,11 +206,13 @@
 .chat-item-btn {
   box-sizing: border-box;
   width: 100%;
+  height: 2rem;
+  min-height: 2rem;
   border: 1px solid var(--glass-border-soft);
   background: rgba(255, 255, 255, 0.03);
   color: #e8eaef;
   border-radius: 12px;
-  padding: 0.55rem 0.65rem;
+  padding: 0 0.65rem;
   text-align: left;
   cursor: pointer;
   overflow: hidden;
@@ -171,7 +220,9 @@
   white-space: nowrap;
   user-select: none;
   font: inherit;
-  line-height: 1.35;
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
 }
 
 .chat-item-row {
@@ -195,11 +246,13 @@
   outline: none;
 }
 
-/* Match .chat-item-btn metrics so the row height stays the same while renaming */
+/* Match delete control (2rem) — same row height as chat pill */
 .chat-item-row .rename-input {
   margin: 0;
-  padding: 0.55rem 0.65rem;
-  line-height: 1.35;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0 0.6rem;
+  line-height: 2rem;
 }
 
 .rename-input:focus {
@@ -550,14 +603,6 @@
   line-height: 1.45;
 }
 
-.pool-scroll {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  overflow: auto;
-  min-height: 0;
-}
-
 .pool-field-label {
   display: block;
   margin-top: 0.35rem;
@@ -568,21 +613,13 @@
   line-height: 1.35;
 }
 
-.pool-select {
-  width: 100%;
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border-soft);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(245, 246, 250, 0.96);
-  padding: 0.5rem 0.6rem;
-  font: inherit;
-  line-height: 1.35;
-  outline: none;
-}
-
-.pool-select:focus {
-  border-color: rgba(129, 140, 248, 0.45);
+.pool-dd-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
 }
 
 .pool-action-btn {
@@ -650,12 +687,15 @@
 
 .pool-track-line {
   min-width: 0;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0.45rem 0.5rem;
+  padding: 0 0.5rem;
   font-size: 0.86rem;
-  line-height: 1.35;
+  line-height: 1.25;
 }
 
 @media (max-width: 900px) {

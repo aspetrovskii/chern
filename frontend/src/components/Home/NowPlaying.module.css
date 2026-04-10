@@ -334,10 +334,19 @@
   justify-content: center;
 }
 
+.now-playing__btn svg {
+  display: block;
+  color: rgba(230, 232, 240, 0.95);
+}
+
 .now-playing__btn-icon {
   width: 1.05rem;
   height: 1.05rem;
   display: block;
+}
+
+.now-playing__btn-icon path {
+  fill: currentColor;
 }
 
 .now-playing__btn:hover {
