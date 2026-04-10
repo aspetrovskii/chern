@@ -1,0 +1,346 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user
+from app.api.schemas import (
+    AuthCallbackRequest,
+    AuthCallbackResponse,
+    AuthLoginResponse,
+    ChatCreateRequest,
+    ChatDTO,
+    ChatPatchRequest,
+    ConcertDTO,
+    ConcertPatchOrderRequest,
+    GenerateResponse,
+    MessageCreateRequest,
+    MessageDTO,
+    PoolCreateRequest,
+    PoolDeleteRequest,
+    SpotifyPlaylistDTO,
+    TokenDTO,
+    UserDTO,
+)
+from app.core.config import settings
+from app.core.security import create_access_token, encrypt_secret
+from app.db.models import Chat, ChatPoolTrack, Concert, Message, User
+from app.db.session import get_db
+from app.services.pipeline import ConcertPipeline
+from spotify.client import SpotifyClientMock
+
+router = APIRouter(prefix=settings.api_prefix)
+
+
+@router.get("/auth/spotify/login", response_model=AuthLoginResponse)
+def auth_spotify_login() -> AuthLoginResponse:
+    return AuthLoginResponse(
+        auth_url="https://accounts.spotify.com/authorize?client_id=mock&response_type=code",
+        state="mock-state",
+        provider_mode=settings.provider_mode,
+    )
+
+
+@router.post("/auth/spotify/callback", response_model=AuthCallbackResponse)
+def auth_spotify_callback(payload: AuthCallbackRequest, db: Session = Depends(get_db)) -> AuthCallbackResponse:
+    spotify_user_id = f"mock_{payload.code}"
+    user = db.scalar(select(User).where(User.spotify_user_id == spotify_user_id))
+    if not user:
+        user = User(
+            spotify_user_id=spotify_user_id,
+            email=f"{spotify_user_id}@mock.local",
+            refresh_token_encrypted=encrypt_secret("mock-refresh-token"),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    token = create_access_token(str(user.id))
+    return AuthCallbackResponse(
+        token=TokenDTO(access_token=token),
+        user=UserDTO(id=user.id, spotify_user_id=user.spotify_user_id, email=user.email),
+    )
+
+
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout() -> None:
+    return None
+
+
+@router.get("/me", response_model=UserDTO)
+def me(current_user: User = Depends(get_current_user)) -> UserDTO:
+    return UserDTO(id=current_user.id, spotify_user_id=current_user.spotify_user_id, email=current_user.email)
+
+
+@router.get("/chats", response_model=list[ChatDTO])
+def list_chats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[ChatDTO]:
+    chats = db.scalars(select(Chat).where(Chat.user_id == current_user.id).order_by(Chat.updated_at.desc())).all()
+    return [
+        ChatDTO(
+            id=chat.id,
+            title=chat.title,
+            mode=chat.mode,
+            source_spotify_playlist_id=chat.source_spotify_playlist_id,
+            target_track_count=chat.target_track_count,
+            created_at=chat.created_at,
+            updated_at=chat.updated_at,
+        )
+        for chat in chats
+    ]
+
+
+@router.post("/chats", response_model=ChatDTO)
+def create_chat(
+    payload: ChatCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ChatDTO:
+    chat = Chat(user_id=current_user.id, title=payload.title)
+    db.add(chat)
+    db.commit()
+    db.refresh(chat)
+    return ChatDTO(
+        id=chat.id,
+        title=chat.title,
+        mode=chat.mode,
+        source_spotify_playlist_id=chat.source_spotify_playlist_id,
+        target_track_count=chat.target_track_count,
+        created_at=chat.created_at,
+        updated_at=chat.updated_at,
+    )
+
+
+@router.get("/chats/{chat_id}", response_model=ChatDTO)
+def get_chat(chat_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ChatDTO:
+    chat = _get_chat_or_404(db, current_user.id, chat_id)
+    return ChatDTO(
+        id=chat.id,
+        title=chat.title,
+        mode=chat.mode,
+        source_spotify_playlist_id=chat.source_spotify_playlist_id,
+        target_track_count=chat.target_track_count,
+        created_at=chat.created_at,
+        updated_at=chat.updated_at,
+    )
+
+
+@router.patch("/chats/{chat_id}", response_model=ChatDTO)
+def patch_chat(
+    chat_id: int,
+    payload: ChatPatchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ChatDTO:
+    chat = _get_chat_or_404(db, current_user.id, chat_id)
+    if payload.mode is not None:
+        chat.mode = payload.mode
+    if payload.target_track_count is not None:
+        chat.target_track_count = payload.target_track_count
+    if payload.source_spotify_playlist_id is not None:
+        chat.source_spotify_playlist_id = payload.source_spotify_playlist_id
+    chat.updated_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(chat)
+    return ChatDTO(
+        id=chat.id,
+        title=chat.title,
+        mode=chat.mode,
+        source_spotify_playlist_id=chat.source_spotify_playlist_id,
+        target_track_count=chat.target_track_count,
+        created_at=chat.created_at,
+        updated_at=chat.updated_at,
+    )
+
+
+@router.post("/chats/{chat_id}/messages", response_model=GenerateResponse, status_code=status.HTTP_202_ACCEPTED)
+def post_message(
+    chat_id: int,
+    payload: MessageCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GenerateResponse:
+    chat = _get_chat_or_404(db, current_user.id, chat_id)
+
+    user_message = Message(chat_id=chat.id, role="user", content=payload.content, status="queued")
+    db.add(user_message)
+    db.flush()
+
+    pipeline = ConcertPipeline(settings.llm_cache_db_path)
+    result = pipeline.run(
+        user_text=payload.content,
+        chat_id=chat.id,
+        mode=chat.mode,
+        source_playlist_id=chat.source_spotify_playlist_id,
+        target_count=chat.target_track_count,
+    )
+
+    user_message.status = "done"
+    user_message.structured_intent = result.structured_intent
+
+    assistant_message = Message(
+        chat_id=chat.id,
+        role="assistant",
+        content=f"Concert generated with {len(result.ordered_track_ids)} tracks",
+        status="done",
+    )
+    db.add(assistant_message)
+    db.flush()
+
+    next_version = (db.scalar(select(func.max(Concert.version)).where(Concert.chat_id == chat.id)) or 0) + 1
+    concert = Concert(
+        chat_id=chat.id,
+        message_id=assistant_message.id,
+        version=next_version,
+        ordered_track_ids=result.ordered_track_ids,
+        order_source="optimizer",
+    )
+    db.add(concert)
+    chat.updated_at = datetime.now(UTC)
+    db.commit()
+    return GenerateResponse(message_id=user_message.id, status="done")
+
+
+@router.get("/chats/{chat_id}/messages/{msg_id}", response_model=MessageDTO)
+def get_message(
+    chat_id: int,
+    msg_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MessageDTO:
+    _get_chat_or_404(db, current_user.id, chat_id)
+    message = db.scalar(select(Message).where(Message.id == msg_id, Message.chat_id == chat_id))
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return MessageDTO(
+        id=message.id,
+        chat_id=message.chat_id,
+        role=message.role,
+        content=message.content,
+        status=message.status,
+        structured_intent=message.structured_intent,
+        error=message.error,
+        created_at=message.created_at,
+    )
+
+
+@router.get("/chats/{chat_id}/concert", response_model=ConcertDTO)
+def get_concert(chat_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ConcertDTO:
+    _get_chat_or_404(db, current_user.id, chat_id)
+    concert = db.scalar(select(Concert).where(Concert.chat_id == chat_id).order_by(Concert.version.desc()))
+    if not concert:
+        raise HTTPException(status_code=404, detail="Concert not found")
+    return _concert_dto(concert)
+
+
+@router.patch("/chats/{chat_id}/concert/order", response_model=ConcertDTO)
+def patch_concert_order(
+    chat_id: int,
+    payload: ConcertPatchOrderRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ConcertDTO:
+    _get_chat_or_404(db, current_user.id, chat_id)
+    concert = db.scalar(select(Concert).where(Concert.chat_id == chat_id).order_by(Concert.version.desc()))
+    if not concert:
+        raise HTTPException(status_code=404, detail="Concert not found")
+    expected = list(concert.ordered_track_ids)
+    received = payload.ordered_track_ids
+    if len(received) != len(expected) or set(received) != set(expected):
+        raise HTTPException(status_code=400, detail="ordered_track_ids must be full permutation of current concert")
+    concert.ordered_track_ids = received
+    concert.order_source = "user"
+    concert.updated_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(concert)
+    return _concert_dto(concert)
+
+
+@router.get("/chats/{chat_id}/concerts", response_model=list[ConcertDTO])
+def list_concerts(chat_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[ConcertDTO]:
+    _get_chat_or_404(db, current_user.id, chat_id)
+    concerts = db.scalars(select(Concert).where(Concert.chat_id == chat_id).order_by(Concert.version.desc())).all()
+    return [_concert_dto(c) for c in concerts]
+
+
+@router.get("/spotify/playlists", response_model=list[SpotifyPlaylistDTO])
+def spotify_playlists(current_user: User = Depends(get_current_user)) -> list[SpotifyPlaylistDTO]:
+    _ = current_user
+    spotify = SpotifyClientMock()
+    return [SpotifyPlaylistDTO(id=p["id"], name=p["name"]) for p in spotify.get_user_playlists()]
+
+
+@router.post("/chats/{chat_id}/pool", status_code=status.HTTP_204_NO_CONTENT)
+def add_pool_tracks(
+    chat_id: int,
+    payload: PoolCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    chat = _get_chat_or_404(db, current_user.id, chat_id)
+    source_ids = list(payload.track_ids)
+    if payload.playlist_id:
+        source_ids.extend([t.spotify_track_id for t in SpotifyClientMock().get_tracks_for_playlist(payload.playlist_id)])
+    source_ids = list(dict.fromkeys(source_ids))[:300]
+    for track_id in source_ids:
+        exists = db.scalar(
+            select(ChatPoolTrack).where(ChatPoolTrack.chat_id == chat.id, ChatPoolTrack.spotify_track_id == track_id)
+        )
+        if exists:
+            continue
+        db.add(ChatPoolTrack(chat_id=chat.id, spotify_track_id=track_id, added_via="manual"))
+    chat.updated_at = datetime.now(UTC)
+    db.commit()
+    return None
+
+
+@router.delete("/chats/{chat_id}/pool/tracks", status_code=status.HTTP_204_NO_CONTENT)
+def delete_pool_tracks(
+    chat_id: int,
+    payload: PoolDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    _get_chat_or_404(db, current_user.id, chat_id)
+    rows = db.scalars(
+        select(ChatPoolTrack).where(ChatPoolTrack.chat_id == chat_id, ChatPoolTrack.spotify_track_id.in_(payload.track_ids))
+    ).all()
+    for row in rows:
+        db.delete(row)
+    db.commit()
+    return None
+
+
+@router.post("/chats/{chat_id}/generate", response_model=GenerateResponse, status_code=status.HTTP_202_ACCEPTED)
+def regenerate_chat(
+    chat_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GenerateResponse:
+    return post_message(
+        chat_id=chat_id,
+        payload=MessageCreateRequest(content="regenerate concert"),
+        db=db,
+        current_user=current_user,
+    )
+
+
+def _concert_dto(concert: Concert) -> ConcertDTO:
+    return ConcertDTO(
+        id=concert.id,
+        chat_id=concert.chat_id,
+        version=concert.version,
+        ordered_track_ids=concert.ordered_track_ids,
+        spotify_playlist_id=concert.spotify_playlist_id,
+        order_source=concert.order_source,
+        created_at=concert.created_at,
+        updated_at=concert.updated_at,
+    )
+
+
+def _get_chat_or_404(db: Session, user_id: int, chat_id: int) -> Chat:
+    chat = db.scalar(select(Chat).where(Chat.id == chat_id, Chat.user_id == user_id))
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    return chat
