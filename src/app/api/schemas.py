@@ -24,6 +24,7 @@ class ProvidersStatusDTO(BaseModel):
     llm: Literal["yandex", "mock"]
     yandex_configured: bool
     spotify_oauth_configured: bool
+    ui_data_source: Literal["real_providers", "mock_fallback"]
 
 
 class AuthCallbackRequest(BaseModel):
@@ -52,6 +53,7 @@ class ChatCreateRequest(BaseModel):
 
 
 class ChatPatchRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=120)
     mode: Literal["fixed_pool", "spotify_discovery"] | None = None
     source_spotify_playlist_id: str | None = None
     target_track_count: int | None = Field(default=None, ge=5, le=30)
@@ -89,12 +91,19 @@ class ConcertDTO(BaseModel):
     ordered_track_ids: list[str]
     spotify_playlist_id: str | None = None
     order_source: str
+    label: str | None = None
     created_at: datetime
     updated_at: datetime
 
 
 class ConcertPatchOrderRequest(BaseModel):
+    version: int | None = None
     ordered_track_ids: list[str]
+
+
+class ConcertMetaPatchRequest(BaseModel):
+    version: int
+    label: str = Field(default="", max_length=80)
 
 
 class PoolCreateRequest(BaseModel):
@@ -116,3 +125,26 @@ class SpotifyPlaylistDTO(BaseModel):
 class GenerateResponse(BaseModel):
     message_id: int
     status: str
+
+
+class ChatPoolDTO(BaseModel):
+    track_ids: list[str]
+
+
+class TracksResolveRequest(BaseModel):
+    track_ids: list[str] = Field(default_factory=list, max_length=200)
+
+
+class TrackMetaDTO(BaseModel):
+    id: str
+    title: str
+    artist: str
+    uri: str
+    energy: float = 0.5
+    valence: float = 0.5
+    tempo: float = 120.0
+    tags: list[str] = Field(default_factory=list)
+
+
+class TracksResolveResponse(BaseModel):
+    tracks: list[TrackMetaDTO]

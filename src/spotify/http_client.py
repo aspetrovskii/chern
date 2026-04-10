@@ -154,6 +154,41 @@ class SpotifyBackedCatalog:
                         ids.append(tid)
         return self._hydrate_tracks(ids[:target])
 
+    def get_tracks_for_album(self, album_id: str) -> list[SpotifyTrack]:
+        if not album_id:
+            return []
+        ids: list[str] = []
+        offset = 0
+        while True:
+            r = self._request(
+                "GET",
+                f"/albums/{album_id}/tracks",
+                params={"limit": 50, "offset": offset, "market": "US"},
+            )
+            if r.status_code >= 400:
+                r.raise_for_status()
+            data = r.json()
+            for item in data.get("items", []) or []:
+                tid = item.get("id")
+                if tid:
+                    ids.append(tid)
+            if not data.get("items") or not data.get("next"):
+                break
+            offset += len(data["items"])
+        return self._hydrate_tracks(ids)
+
+    def get_tracks_for_artist(self, artist_id: str) -> list[SpotifyTrack]:
+        if not artist_id:
+            return []
+        r = self._request("GET", f"/artists/{artist_id}/top-tracks", params={"market": "US"})
+        if r.status_code >= 400:
+            r.raise_for_status()
+        ids = [t.get("id") for t in (r.json().get("tracks") or []) if t and t.get("id")]
+        return self._hydrate_tracks(ids)
+
+    def get_tracks_by_ids(self, ids: list[str]) -> list[SpotifyTrack]:
+        return self._hydrate_tracks([i for i in ids if i])
+
     def _hydrate_tracks(self, ids: list[str]) -> list[SpotifyTrack]:
         if not ids:
             return []

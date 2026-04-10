@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     app_name: str = "Conce Music AI API"
     api_prefix: str = "/api/v1"
     app_base_url: str = "http://127.0.0.1:8000"
+    # Where the SPA lives (OAuth redirect after Spotify login). Override via env: FRONTEND_PUBLIC_URL.
+    frontend_public_url: str = "http://127.0.0.1:5173"
 
     # auto: real when credentials exist; else mock. Per-call degradation stays inside LLMService.
     provider_mode: str = Field(default="auto", description="auto | real | mock")

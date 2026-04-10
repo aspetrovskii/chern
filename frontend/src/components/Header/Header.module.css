@@ -25,6 +25,18 @@
   gap: 0.5rem;
 }
 
+.dev-providers-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgba(160, 195, 255, 0.88);
+  opacity: 0.85;
+  white-space: nowrap;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 a.nav-btn:link,
 a.nav-btn:visited {
   color: inherit;

@@ -26,6 +26,7 @@ class ConcertPipeline:
         chat_id: int,
         mode: str,
         source_playlist_id: str | None,
+        pool_track_ids: list[str] | None = None,
         target_count: int,
     ) -> PipelineResult:
         intent = self.llm.parse_user_intent(
@@ -40,7 +41,9 @@ class ConcertPipeline:
             ),
         )
 
-        candidates = self._collect_candidates(mode, source_playlist_id, user_text, target_count)
+        candidates = self._collect_candidates(
+            mode, source_playlist_id, user_text, target_count, pool_track_ids
+        )
         scored: list[CandidateTrack] = []
         for track in candidates:
             tags = self.llm.tag_track(
@@ -69,8 +72,14 @@ class ConcertPipeline:
         source_playlist_id: str | None,
         user_text: str,
         target_count: int,
+        pool_track_ids: list[str] | None,
     ) -> list[SpotifyTrack]:
         pool_target = min(max(target_count * 5, 20), 120)
         if mode == "fixed_pool":
-            return self.spotify.get_tracks_for_playlist(source_playlist_id or "")[:pool_target]
+            ids = list(dict.fromkeys(pool_track_ids or []))[:pool_target]
+            if ids:
+                return self.spotify.get_tracks_by_ids(ids)[:pool_target]
+            if source_playlist_id and str(source_playlist_id).strip():
+                return self.spotify.get_tracks_for_playlist(source_playlist_id.strip())[:pool_target]
+            return []
         return self.spotify.discovery_tracks(user_text, limit=pool_target)

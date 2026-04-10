@@ -36,3 +36,24 @@ class SpotifyClientMock:
     def discovery_tracks(self, query: str, limit: int = 100) -> list[SpotifyTrack]:
         _ = query
         return (self._tracks * ((limit // len(self._tracks)) + 1))[: min(limit, 120)]
+
+    def get_tracks_for_album(self, album_id: str) -> list[SpotifyTrack]:
+        _ = album_id
+        return list(self._tracks)[: min(8, len(self._tracks))]
+
+    def get_tracks_for_artist(self, artist_id: str) -> list[SpotifyTrack]:
+        _ = artist_id
+        return list(self._tracks)[: min(8, len(self._tracks))]
+
+    def get_tracks_by_ids(self, ids: list[str]) -> list[SpotifyTrack]:
+        by_id = {t.spotify_track_id: t for t in self._tracks}
+        out: list[SpotifyTrack] = []
+        seen: set[str] = set()
+        for tid in ids:
+            if not tid or tid in seen:
+                continue
+            seen.add(tid)
+            hit = by_id.get(tid)
+            if hit is not None:
+                out.append(hit)
+        return out

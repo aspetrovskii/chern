@@ -4,6 +4,8 @@ import json
 import sqlite3
 from datetime import UTC, datetime
 
+from typing import Any
+
 from .models import TrackTagsV1
 
 
@@ -98,3 +100,38 @@ class SQLiteTrackCache:
             conn.commit()
         finally:
             conn.close()
+
+    def get_display_bundle(self, spotify_track_id: str) -> dict[str, Any] | None:
+        """UI-facing metadata when the row exists in LLM cache (post-tagging)."""
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT raw_metadata, audio_features, llm_tags FROM tracks_cache WHERE spotify_track_id = ?",
+                (spotify_track_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        if not row:
+            return None
+        try:
+            raw_meta = json.loads(row["raw_metadata"])
+            audio = json.loads(row["audio_features"])
+        except (TypeError, json.JSONDecodeError):
+            return None
+        tag_list: list[str] = []
+        try:
+            tags_obj = TrackTagsV1.from_json(row["llm_tags"])
+            tag_list = list(dict.fromkeys([*tags_obj.genre_tags, *tags_obj.theme_tags]))
+        except (TypeError, json.JSONDecodeError, ValueError):
+            pass
+        tid = str(spotify_track_id).strip()
+        return {
+            "id": tid,
+            "title": str(raw_meta.get("name", "") or tid),
+            "artist": str(raw_meta.get("artist", "") or ""),
+            "uri": str(raw_meta.get("uri", "") or f"spotify:track:{tid}"),
+            "energy": float(audio.get("energy", 0.5) or 0.5),
+            "valence": float(audio.get("valence", 0.5) or 0.5),
+            "tempo": float(audio.get("tempo", 120.0) or 120.0),
+            "tags": tag_list,
+        }

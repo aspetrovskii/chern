@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { getAccessToken } from "../../lib/api/http";
+import { getSessionUser, syncSessionFromApiMe } from "../../lib/auth";
 import { type Locale } from "../../lib/i18n";
 import styles from "./ChatPage.module.css";
+import { getTrackById as mvpGetTrackById, type ChatRecord } from "../../lib/concertMvp";
 import {
-  createChat,
-  deleteChat,
-  getTrackById,
-  listChats,
-  sendUserPrompt,
-  updateChatTitle,
-  updateConcertLabel,
-  updateConcertOrder,
-  type ChatRecord,
-} from "../../lib/concertMvp";
+  apiCreateChat,
+  apiDeleteChat,
+  apiListChats,
+  apiLoadChatFull,
+  apiPatchChatTitle,
+  apiPatchConcertLabel,
+  apiPatchConcertOrder,
+  apiPostChatPrompt,
+  getCachedTrack,
+} from "../../lib/pendingBackendApi";
 import { loadSavedConcertsFromStorage, persistSavedConcerts } from "../../lib/savedConcertsMvp";
 import { PoolSidebar } from "./PoolSidebar";
 
@@ -494,6 +497,10 @@ function reorder(ids: string[], from: number, to: number): string[] {
   return next;
 }
 
+function getTrackById(trackId: string) {
+  return getCachedTrack(trackId) ?? mvpGetTrackById(trackId);
+}
+
 function pickHeadlineByChatId(chatId: string, headlines: readonly string[]): string {
   let hash = 0;
   for (let i = 0; i < chatId.length; i += 1) {
@@ -545,6 +552,7 @@ function SidebarChevron({ direction }: { direction: ChevronDir }) {
 }
 
 export function ChatPage({ locale }: ChatPageProps) {
+  const navigate = useNavigate();
   const ui = CHAT_UI_TEXT[locale] ?? CHAT_UI_TEXT.en;
   const localizedHeadlines = EMPTY_CHAT_HEADLINES_BY_LOCALE[locale];
   const [searchParams, setSearchParams] = useSearchParams();
@@ -562,20 +570,64 @@ export function ChatPage({ locale }: ChatPageProps) {
   const [concertLabelDraft, setConcertLabelDraft] = useState("");
 
   useEffect(() => {
-    const items = listChats();
-    setChats(items);
-    setActiveChatId(items[0]?.id ?? null);
+    const token = getAccessToken();
+    if (!token) {
+      navigate("/auth", { replace: true });
+      return;
+    }
+    if (!getSessionUser()) {
+      void syncSessionFromApiMe()
+        .then(() => {
+          window.dispatchEvent(new Event("conce-auth-success"));
+        })
+        .catch(() => navigate("/auth", { replace: true }));
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    void (async () => {
+      const items = await apiListChats();
+      setChats(items);
+      const first = items[0]?.id ?? null;
+      setActiveChatId(first);
+      if (first) {
+        const full = await apiLoadChatFull(first);
+        if (full) {
+          setChats((prev) => prev.map((x) => (x.id === full.id ? full : x)));
+        }
+      }
+    })();
   }, []);
 
   useEffect(() => {
     const c = searchParams.get("c");
     if (!c) return;
-    if (listChats().some((x) => x.id === c)) {
-      setActiveChatId(c);
-      setViewConcertVersion(null);
-    }
-    setSearchParams({}, { replace: true });
+    void (async () => {
+      const items = await apiListChats();
+      if (items.some((x) => x.id === c)) {
+        setActiveChatId(c);
+        setViewConcertVersion(null);
+        const full = await apiLoadChatFull(c);
+        if (full) {
+          setChats((prev) => prev.map((x) => (x.id === full.id ? full : x)));
+        }
+      }
+      setSearchParams({}, { replace: true });
+    })();
   }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!activeChatId) return;
+    let cancelled = false;
+    void (async () => {
+      const full = await apiLoadChatFull(activeChatId);
+      if (cancelled || !full) return;
+      setChats((prev) => prev.map((c) => (c.id === full.id ? full : c)));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChatId]);
 
   const activeChat = useMemo(
     () => chats.find((c) => c.id === activeChatId) ?? null,
@@ -621,33 +673,67 @@ export function ChatPage({ locale }: ChatPageProps) {
   }, [chats, locale, search]);
 
   function refresh(nextActiveId?: string): void {
-    const items = listChats();
-    setChats(items);
-    if (nextActiveId) {
-      setActiveChatId(nextActiveId);
-      return;
-    }
-    if (items.length > 0 && !items.some((x) => x.id === activeChatId)) {
-      setActiveChatId(items[0].id);
-    }
+    void (async () => {
+      const items = await apiListChats();
+      const targetId = nextActiveId ?? activeChatId;
+      let list = items;
+      if (targetId) {
+        const full = await apiLoadChatFull(targetId);
+        if (full) {
+          list = items.map((c) => (c.id === full.id ? full : c));
+        }
+      }
+      setChats(list);
+      if (nextActiveId) {
+        setActiveChatId(nextActiveId);
+        return;
+      }
+      if (list.length > 0 && activeChatId && !list.some((x) => x.id === activeChatId)) {
+        const nid = list[0].id;
+        setActiveChatId(nid);
+        const full = await apiLoadChatFull(nid);
+        if (full) {
+          setChats((prev) => prev.map((c) => (c.id === full.id ? full : c)));
+        }
+      }
+    })();
   }
 
   function onCreateChat(): void {
-    const created = createChat();
-    refresh(created.id);
-    setViewConcertVersion(null);
+    void (async () => {
+      const created = await apiCreateChat();
+      const full = await apiLoadChatFull(created.id);
+      const row = full ?? created;
+      const items = await apiListChats();
+      const list = items.map((c) => (c.id === row.id ? row : c));
+      if (!list.some((c) => c.id === row.id)) {
+        list.unshift(row);
+      }
+      setChats(list);
+      setActiveChatId(row.id);
+      setViewConcertVersion(null);
+    })();
   }
 
   function onDeleteChat(chatId: string): void {
-    const didDelete = deleteChat(chatId);
-    if (!didDelete) return;
-    persistSavedConcerts(loadSavedConcertsFromStorage().filter((item) => item.chatId !== chatId));
-    const items = listChats();
-    setChats(items);
-    if (chatId === activeChatId) {
-      setActiveChatId(items[0]?.id ?? null);
-      setViewConcertVersion(null);
-    }
+    void (async () => {
+      const didDelete = await apiDeleteChat(chatId);
+      if (!didDelete) return;
+      persistSavedConcerts(loadSavedConcertsFromStorage().filter((item) => item.chatId !== chatId));
+      const items = await apiListChats();
+      setChats(items);
+      if (chatId === activeChatId) {
+        const nid = items[0]?.id ?? null;
+        setActiveChatId(nid);
+        setViewConcertVersion(null);
+        if (nid) {
+          const full = await apiLoadChatFull(nid);
+          if (full) {
+            setChats((prev) => prev.map((c) => (c.id === full.id ? full : c)));
+          }
+        }
+      }
+    })();
   }
 
   function onSaveConcert(): void {
@@ -671,49 +757,57 @@ export function ChatPage({ locale }: ChatPageProps) {
     const id = renamingChatId;
     const trimmed = chatRenameDraft.trim();
     setRenamingChatId(null);
-    if (!trimmed) {
+    void (async () => {
+      if (!trimmed) {
+        refresh();
+        return;
+      }
+      const next = await apiPatchChatTitle(id, trimmed);
+      if (next) {
+        persistSavedConcerts(
+          loadSavedConcertsFromStorage().map((item) =>
+            item.chatId === id ? { ...item, chatTitle: next.title } : item
+          )
+        );
+      }
       refresh();
-      return;
-    }
-    const next = updateChatTitle(id, trimmed);
-    if (next) {
-      persistSavedConcerts(
-        loadSavedConcertsFromStorage().map((item) =>
-          item.chatId === id ? { ...item, chatTitle: next.title } : item
-        )
-      );
-    }
-    refresh();
+    })();
   }
 
   function commitConcertLabel(): void {
     if (!activeChat || !activeConcert) return;
-    updateConcertLabel(activeChat.id, activeConcert.version, concertLabelDraft);
-    setEditingConcertLabel(false);
-    refresh();
+    void (async () => {
+      await apiPatchConcertLabel(activeChat.id, activeConcert.version, concertLabelDraft);
+      setEditingConcertLabel(false);
+      refresh();
+    })();
   }
 
   function onStartFromEmpty(): void {
     const text = prompt.trim();
-    const created = createChat();
-    let targetId = created.id;
-    if (text) {
-      const next = sendUserPrompt(created.id, text, locale);
-      if (next) targetId = next.id;
-    }
-    refresh(targetId);
-    setPrompt("");
-    setViewConcertVersion(null);
+    void (async () => {
+      const created = await apiCreateChat();
+      let targetId = created.id;
+      if (text) {
+        const next = await apiPostChatPrompt(created.id, text, locale);
+        if (next) targetId = next.id;
+      }
+      refresh(targetId);
+      setPrompt("");
+      setViewConcertVersion(null);
+    })();
   }
 
   function onSendPrompt(): void {
     if (!activeChat || !prompt.trim()) return;
-    const next = sendUserPrompt(activeChat.id, prompt.trim(), locale);
-    if (next) {
-      refresh(next.id);
-      setPrompt("");
-      setViewConcertVersion(null);
-    }
+    void (async () => {
+      const next = await apiPostChatPrompt(activeChat.id, prompt.trim(), locale);
+      if (next) {
+        refresh(next.id);
+        setPrompt("");
+        setViewConcertVersion(null);
+      }
+    })();
   }
 
   function onSubmitFromEmptyState(): void {
@@ -995,9 +1089,11 @@ export function ChatPage({ locale }: ChatPageProps) {
                         onDrop={() => {
                           if (dragIndex === null || dragIndex === idx || !activeChat || !activeConcert) return;
                           const next = reorder(renderedOrder, dragIndex, idx);
-                          updateConcertOrder(activeChat.id, activeConcert.version, next);
-                          refresh();
-                          setDragIndex(null);
+                          void (async () => {
+                            await apiPatchConcertOrder(activeChat.id, activeConcert.version, next);
+                            refresh();
+                            setDragIndex(null);
+                          })();
                         }}
                       >
                         <span className={styles["track-num"]}>{idx + 1}</span>

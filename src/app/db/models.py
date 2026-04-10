@@ -59,6 +59,7 @@ class Concert(Base):
     ordered_track_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
     spotify_playlist_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     order_source: Mapped[str] = mapped_column(String(32), default="optimizer")
+    label: Mapped[str | None] = mapped_column(String(80), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 

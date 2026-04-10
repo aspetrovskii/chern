@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes.v1 import router as v1_router
@@ -10,6 +11,23 @@ from app.db.base import Base
 from app.db.session import engine
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
+
+_cors_origins = list(
+    dict.fromkeys(
+        [
+            settings.frontend_public_url.rstrip("/"),
+            "http://127.0.0.1:5173",
+            "http://localhost:5173",
+        ]
+    )
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")

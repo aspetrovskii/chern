@@ -1,7 +1,8 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { t, type Locale } from "../../lib/i18n";
-import { getSessionUser, loginWithSpotify } from "../../lib/auth";
+import { getSessionUser, startSpotifyOAuthRedirect, syncSessionFromApiMe } from "../../lib/auth";
+import { setAccessToken } from "../../lib/api/http";
 import neoStyles from "../NeoSurface.module.css";
 import authStyles from "./AuthPage.module.css";
 import layoutStyles from "../MainLayout.module.css";
@@ -13,16 +14,40 @@ type AuthPageProps = {
 
 export function AuthPage({ locale }: AuthPageProps) {
   const navigate = useNavigate();
-  const errKey: string | null = null;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [oauthFail, setOauthFail] = useState(false);
+  const errKey: string | null = oauthFail ? "auth_err_generic" : null;
 
   useEffect(() => {
     if (getSessionUser()) navigate("/", { replace: true });
   }, [navigate]);
 
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "oauth_missing" || err === "oauth_failed") {
+      setOauthFail(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const token = searchParams.get("access_token");
+    if (!token) return;
+    setAccessToken(token);
+    setSearchParams({}, { replace: true });
+    void (async () => {
+      try {
+        await syncSessionFromApiMe();
+        navigate("/", { replace: true });
+        window.dispatchEvent(new Event("conce-auth-success"));
+      } catch {
+        navigate("/", { replace: true });
+      }
+    })();
+  }, [searchParams, setSearchParams, navigate]);
+
   const onSpotifyLogin = () => {
-    loginWithSpotify();
-    navigate("/", { replace: true });
-    window.dispatchEvent(new Event("conce-auth-success"));
+    void startSpotifyOAuthRedirect().catch(() => undefined);
   };
 
   return (

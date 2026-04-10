@@ -1,23 +1,21 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { t, type Locale } from "../../lib/i18n";
+import type { ChatMode, ChatRecord } from "../../lib/concertMvp";
 import {
-  addTracksToPool,
-  getTrackById,
-  loadPoolFromSourcePlaylist,
-  rebuildConcertFromPool,
-  removePoolTrack,
-  setChatMode,
-  setSourceSpotifyPlaylist,
-  type ChatMode,
-  type ChatRecord,
-} from "../../lib/concertMvp";
-import {
-  getTrackIdsForAlbum,
-  getTrackIdsForArtist,
-  getTrackIdsForPlaylist,
-  listMockPlaylists,
-  parseCommaSeparatedTrackIds,
-} from "../../lib/poolEditorMvp";
+  apiListSpotifyPlaylists,
+  apiPatchChatMode,
+  apiPatchSourceSpotifyPlaylist,
+  apiPostLoadPoolFromLinkedPlaylist,
+  apiPostPoolFromAlbumId,
+  apiPostPoolFromArtistId,
+  apiPostPoolFromPlaylistId,
+  apiPostPoolFromTrackIds,
+  apiPostRebuildConcertFromPool,
+  apiDeletePoolTrack,
+  getCachedTrack,
+  type SpotifyPlaylistRow,
+} from "../../lib/pendingBackendApi";
+import { parseCommaSeparatedTrackIds } from "../../lib/poolEditorMvp";
 import styles from "./ChatPage.module.css";
 
 type ChevronDir = "left" | "right";
@@ -62,22 +60,34 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
   const [artistIdInput, setArtistIdInput] = useState("");
   const [trackIdsInput, setTrackIdsInput] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [playlists, setPlaylists] = useState<SpotifyPlaylistRow[]>([]);
 
-  const playlists = useMemo(() => listMockPlaylists(), []);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const rows = await apiListSpotifyPlaylists();
+        setPlaylists(rows);
+      } catch {
+        setPlaylists([]);
+      }
+    })();
+  }, [activeChat?.id]);
 
   const clearFeedbackSoon = useCallback(() => {
     window.setTimeout(() => setFeedback(null), 4000);
   }, []);
 
   const run = useCallback(
-    (fn: () => void) => {
+    (fn: () => Promise<void>) => {
       if (!activeChat) return;
       setBusy(true);
-      try {
-        fn();
-      } finally {
-        setBusy(false);
-      }
+      void (async () => {
+        try {
+          await fn();
+        } finally {
+          setBusy(false);
+        }
+      })();
     },
     [activeChat]
   );
@@ -136,8 +146,8 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
             disabled={busy}
             onChange={(e) => {
               const mode = e.target.value as ChatMode;
-              run(() => {
-                setChatMode(chatId, mode);
+              run(async () => {
+                await apiPatchChatMode(chatId, mode);
                 onRefresh();
               });
             }}
@@ -156,8 +166,8 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
             disabled={busy}
             onChange={(e) => {
               const v = e.target.value || null;
-              run(() => {
-                setSourceSpotifyPlaylist(chatId, v);
+              run(async () => {
+                await apiPatchSourceSpotifyPlaylist(chatId, v);
                 onRefresh();
               });
             }}
@@ -175,8 +185,8 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
             className={`${styles.btn} ${styles["pool-action-btn"]}`}
             disabled={busy || !activeChat.sourceSpotifyPlaylistId}
             onClick={() => {
-              run(() => {
-                const next = loadPoolFromSourcePlaylist(chatId);
+              run(async () => {
+                const next = await apiPostLoadPoolFromLinkedPlaylist(chatId);
                 if (!next) {
                   setFeedback(t(locale, "pool_unknown"));
                   clearFeedbackSoon();
@@ -206,14 +216,13 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
               disabled={busy}
               onClick={() => {
                 const id = playlistIdInput.trim();
-                const ids = getTrackIdsForPlaylist(id);
-                if (ids.length === 0) {
+                if (!id) {
                   setFeedback(t(locale, "pool_unknown"));
                   clearFeedbackSoon();
                   return;
                 }
-                run(() => {
-                  addTracksToPool(chatId, ids);
+                run(async () => {
+                  await apiPostPoolFromPlaylistId(chatId, id);
                   onRefresh();
                 });
                 setPlaylistIdInput("");
@@ -238,14 +247,13 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
               disabled={busy}
               onClick={() => {
                 const id = albumIdInput.trim();
-                const ids = getTrackIdsForAlbum(id);
-                if (ids.length === 0) {
+                if (!id) {
                   setFeedback(t(locale, "pool_unknown"));
                   clearFeedbackSoon();
                   return;
                 }
-                run(() => {
-                  addTracksToPool(chatId, ids);
+                run(async () => {
+                  await apiPostPoolFromAlbumId(chatId, id);
                   onRefresh();
                 });
                 setAlbumIdInput("");
@@ -270,14 +278,13 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
               disabled={busy}
               onClick={() => {
                 const id = artistIdInput.trim();
-                const ids = getTrackIdsForArtist(id);
-                if (ids.length === 0) {
+                if (!id) {
                   setFeedback(t(locale, "pool_unknown"));
                   clearFeedbackSoon();
                   return;
                 }
-                run(() => {
-                  addTracksToPool(chatId, ids);
+                run(async () => {
+                  await apiPostPoolFromArtistId(chatId, id);
                   onRefresh();
                 });
                 setArtistIdInput("");
@@ -302,14 +309,13 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
               disabled={busy}
               onClick={() => {
                 const ids = parseCommaSeparatedTrackIds(trackIdsInput);
-                const known = ids.filter((id) => getTrackById(id));
-                if (known.length === 0) {
+                if (ids.length === 0) {
                   setFeedback(t(locale, "pool_unknown"));
                   clearFeedbackSoon();
                   return;
                 }
-                run(() => {
-                  addTracksToPool(chatId, known);
+                run(async () => {
+                  await apiPostPoolFromTrackIds(chatId, ids);
                   onRefresh();
                 });
                 setTrackIdsInput("");
@@ -328,8 +334,8 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
             className={`${styles.btn} ${styles["pool-rebuild-btn"]}`}
             disabled={busy || (activeChat.mode === "fixed_pool" && activeChat.poolTrackIds.length === 0)}
             onClick={() => {
-              run(() => {
-                const next = rebuildConcertFromPool(chatId, locale);
+              run(async () => {
+                const next = await apiPostRebuildConcertFromPool(chatId, locale);
                 if (!next) {
                   setFeedback(t(locale, "pool_unknown"));
                   clearFeedbackSoon();
@@ -345,8 +351,8 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
             {t(locale, "pool_tracks_in_pool")} ({activeChat.poolTrackIds.length})
           </p>
           <ul className={styles["chat-list"]}>
-            {activeChat.poolTrackIds.map((tid) => {
-              const tr = getTrackById(tid);
+            {activeChat.poolTrackIds.map((tid: string) => {
+              const tr = getCachedTrack(tid);
               return (
                 <li key={tid}>
                   <div className={styles["chat-item-row"]}>
@@ -359,8 +365,8 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
                         className={styles["delete-item-btn"]}
                         aria-label="Remove from pool"
                         onClick={() => {
-                          run(() => {
-                            removePoolTrack(chatId, tid);
+                          run(async () => {
+                            await apiDeletePoolTrack(chatId, tid);
                             onRefresh();
                           });
                         }}
