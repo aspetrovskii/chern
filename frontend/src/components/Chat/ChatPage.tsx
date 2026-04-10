@@ -409,6 +409,34 @@ function sectionLabelByDay(iso: string, locale: Locale): string {
   return ui.daysAgo(diffDays);
 }
 
+type ChevronDir = "left" | "right";
+
+function SidebarChevron({ direction }: { direction: ChevronDir }) {
+  return (
+    <span className={styles["btn-icon__glyph"]} aria-hidden="true">
+      <svg viewBox="0 0 24 24" width={20} height={20} fill="none" xmlns="http://www.w3.org/2000/svg">
+        {direction === "left" ? (
+          <path
+            d="M15 6l-6 6 6 6"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ) : (
+          <path
+            d="M9 6l6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+      </svg>
+    </span>
+  );
+}
+
 export function ChatPage({ locale }: ChatPageProps) {
   const ui = CHAT_UI_TEXT[locale] ?? CHAT_UI_TEXT.en;
   const localizedHeadlines = locale === "ru" ? EMPTY_CHAT_HEADLINES_RU : EMPTY_CHAT_HEADLINES_EN;
@@ -574,7 +602,7 @@ export function ChatPage({ locale }: ChatPageProps) {
             onClick={() => setSidebarOpen((v) => !v)}
             title={sidebarOpen ? ui.hideChats : ui.showChats}
           >
-            {sidebarOpen ? "◀" : "▶"}
+            <SidebarChevron direction={sidebarOpen ? "left" : "right"} />
           </button>
           {sidebarOpen && (
             <button type="button" className={`${styles.btn} ${styles["new-chat-btn"]}`} onClick={onCreateChat}>
@@ -817,7 +845,7 @@ export function ChatPage({ locale }: ChatPageProps) {
             onClick={() => setSavedConcertsOpen((v) => !v)}
             title={savedConcertsOpen ? ui.hideConcerts : ui.showConcerts}
           >
-            {savedConcertsOpen ? "▶" : "◀"}
+            <SidebarChevron direction={savedConcertsOpen ? "right" : "left"} />
           </button>
           {savedConcertsOpen && <strong>{ui.savedConcerts}</strong>}
         </div>
