@@ -1,6 +1,7 @@
 .main-area {
   flex: 1;
   padding: 2rem 1.5rem;
+  min-height: 0;
 }
 
 .main-area--with-player {
@@ -13,6 +14,27 @@
 
 .main-area--auth {
   padding-top: 1.5rem;
+}
+
+.main-area--chat {
+  display: flex;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+
+.main-area--chat > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Reserve space for fixed NowPlaying on /chat (same footprint as other routes). */
+.main-area--chat-player {
+  padding-bottom: 7.5rem;
+}
+
+.main-area--chat-player-collapsed {
+  padding-bottom: 3.75rem;
 }
 
 .page-title {

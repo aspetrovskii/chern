@@ -21,6 +21,8 @@ export type ChatMessage = {
 
 export type ConcertVersion = {
   version: number;
+  /** Optional user-defined name for this version */
+  label?: string;
   orderedTrackIds: string[];
   orderSource: "optimizer" | "user";
   prompt: string;
@@ -37,6 +39,8 @@ export type ChatRecord = {
   createdAt: string;
   updatedAt: string;
 };
+
+import { t, type Locale } from "./i18n";
 
 const STORAGE_KEY = "conce-mvp-chats-v1";
 const DEFAULT_TARGET_COUNT = 10;
@@ -102,6 +106,47 @@ export function createChat(): ChatRecord {
   chats.push(chat);
   saveChats(chats);
   return chat;
+}
+
+export function deleteChat(chatId: string): boolean {
+  const chats = listChats();
+  const next = chats.filter((chat) => chat.id !== chatId);
+  if (next.length === chats.length) return false;
+  saveChats(next);
+  return true;
+}
+
+export function updateChatTitle(chatId: string, title: string): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const trimmed = title.trim().slice(0, 120);
+  if (!trimmed) return null;
+  const ts = nowIso();
+  const next: ChatRecord = { ...chats[idx], title: trimmed, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
+}
+
+export function updateConcertLabel(chatId: string, version: number, label: string): ChatRecord | null {
+  const chats = listChats();
+  const idx = chats.findIndex((c) => c.id === chatId);
+  if (idx < 0) return null;
+  const chat = chats[idx];
+  const concertIdx = chat.concerts.findIndex((c) => c.version === version);
+  if (concertIdx < 0) return null;
+  const ts = nowIso();
+  const trimmed = label.trim().slice(0, 80);
+  const nextConcert: ConcertVersion = { ...chat.concerts[concertIdx], updatedAt: ts };
+  if (trimmed) nextConcert.label = trimmed;
+  else delete nextConcert.label;
+  const nextConcerts = [...chat.concerts];
+  nextConcerts[concertIdx] = nextConcert;
+  const next: ChatRecord = { ...chat, concerts: nextConcerts, updatedAt: ts };
+  chats[idx] = next;
+  saveChats(chats);
+  return next;
 }
 
 export function updateChatTargetCount(chatId: string, targetTrackCount: number): ChatRecord | null {
@@ -199,7 +244,7 @@ function parsePrompt(prompt: string): { words: string[]; desiredEnergy: number }
   return { words, desiredEnergy };
 }
 
-export function sendUserPrompt(chatId: string, prompt: string): ChatRecord | null {
+export function sendUserPrompt(chatId: string, prompt: string, locale: Locale = "en"): ChatRecord | null {
   const chats = listChats();
   const idx = chats.findIndex((c) => c.id === chatId);
   if (idx < 0) return null;
@@ -229,7 +274,7 @@ export function sendUserPrompt(chatId: string, prompt: string): ChatRecord | nul
   const assistantMessage: ChatMessage = {
     id: uid("msg"),
     role: "assistant",
-    content: `Готово: собрал концерт из ${concert.orderedTrackIds.length} треков.`,
+    content: t(locale, "chat_llm_reply", { count: concert.orderedTrackIds.length }),
     createdAt: ts,
     concertVersion: version,
   };
