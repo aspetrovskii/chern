@@ -258,7 +258,6 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days: number) => string;
     emptyInputPlaceholder: string;
     defaultInputPlaceholder: string;
-    saveOrder: string;
     orderSourcePrefix: string;
     dragHint: string;
     versionLabel: string;
@@ -274,6 +273,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: string;
     renameSavedConcert: string;
     renameConcertVersion: string;
+    doubleClickToRename: string;
   }
 > = {
   en: {
@@ -290,9 +290,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `${days} days ago`,
     emptyInputPlaceholder: "How can I help you today?",
     defaultInputPlaceholder: "Describe your concert vibe: genres, arc, energy...",
-    saveOrder: "Save order",
     orderSourcePrefix: "Order source",
-    dragHint: "Drag tracks and save the order.",
+    dragHint: "Drag tracks to reorder.",
     versionLabel: "Version",
     savedConcerts: "Saved concerts",
     hideConcerts: "Hide concerts",
@@ -307,6 +306,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "Rename chat",
     renameSavedConcert: "Rename saved concert",
     renameConcertVersion: "Rename this version",
+    doubleClickToRename: "Double-click to rename",
   },
   ru: {
     hideChats: "Скрыть чаты",
@@ -322,9 +322,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `${days} дн. назад`,
     emptyInputPlaceholder: "Чем могу помочь сегодня?",
     defaultInputPlaceholder: "Опишите концертный вайб: жанры, дуга, энергия...",
-    saveOrder: "Сохранить порядок",
     orderSourcePrefix: "Источник порядка",
-    dragHint: "Перетаскивайте треки и сохраните порядок.",
+    dragHint: "Перетаскивайте треки, чтобы изменить порядок.",
     versionLabel: "Версия",
     savedConcerts: "Сохраненные концерты",
     hideConcerts: "Скрыть концерты",
@@ -339,6 +338,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "Переименовать чат",
     renameSavedConcert: "Переименовать сохранённый концерт",
     renameConcertVersion: "Переименовать эту версию",
+    doubleClickToRename: "Дважды щёлкните, чтобы переименовать",
   },
   tr: {
     hideChats: "Sohbetleri gizle",
@@ -354,9 +354,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `${days} gün önce`,
     emptyInputPlaceholder: "Bugün size nasıl yardımcı olabilirim?",
     defaultInputPlaceholder: "Konser havasını anlatın: türler, akış, enerji...",
-    saveOrder: "Sırayı kaydet",
     orderSourcePrefix: "Sıra kaynağı",
-    dragHint: "Parçaları sürükleyin ve sırayı kaydedin.",
+    dragHint: "Sırayı değiştirmek için parçaları sürükleyin.",
     versionLabel: "Sürüm",
     savedConcerts: "Kaydedilen konserler",
     hideConcerts: "Konserleri gizle",
@@ -371,6 +370,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "Sohbeti yeniden adlandır",
     renameSavedConcert: "Kayıtlı konseri yeniden adlandır",
     renameConcertVersion: "Bu sürümü yeniden adlandır",
+    doubleClickToRename: "Yeniden adlandırmak için çift tıklayın",
   },
   hi: {
     hideChats: "चैट छिपाएँ",
@@ -386,9 +386,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `${days} दिन पहले`,
     emptyInputPlaceholder: "आज मैं आपकी कैसे मदद करूं?",
     defaultInputPlaceholder: "कॉन्सर्ट वाइब बताएं: जॉनर, आर्क, एनर्जी...",
-    saveOrder: "क्रम सहेजें",
     orderSourcePrefix: "क्रम स्रोत",
-    dragHint: "ट्रैक्स को ड्रैग करें और क्रम सहेजें।",
+    dragHint: "क्रम बदलने के लिए ट्रैक्स खींचें।",
     versionLabel: "संस्करण",
     savedConcerts: "सहेजे गए कॉन्सर्ट",
     hideConcerts: "कॉन्सर्ट छिपाएँ",
@@ -403,6 +402,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "चैट का नाम बदलें",
     renameSavedConcert: "सहेजे कॉन्सर्ट का नाम बदलें",
     renameConcertVersion: "इस संस्करण का नाम बदलें",
+    doubleClickToRename: "नाम बदलने के लिए दो बार क्लिक करें",
   },
   zh: {
     hideChats: "隐藏聊天",
@@ -418,9 +418,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `${days} 天前`,
     emptyInputPlaceholder: "今天我可以帮你什么？",
     defaultInputPlaceholder: "描述你的演出氛围：风格、走向、能量...",
-    saveOrder: "保存顺序",
     orderSourcePrefix: "顺序来源",
-    dragHint: "拖拽曲目并保存顺序。",
+    dragHint: "拖拽曲目即可调整顺序。",
     versionLabel: "版本",
     savedConcerts: "已保存演出",
     hideConcerts: "隐藏演出",
@@ -435,6 +434,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "重命名聊天",
     renameSavedConcert: "重命名已保存演出",
     renameConcertVersion: "重命名此版本",
+    doubleClickToRename: "双击以重命名",
   },
   ur: {
     hideChats: "چیٹس چھپائیں",
@@ -450,9 +450,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `${days} دن پہلے`,
     emptyInputPlaceholder: "آج میں آپ کی کیسے مدد کر سکتا ہوں؟",
     defaultInputPlaceholder: "کنسرٹ وائب بیان کریں: صنف، قوس، توانائی...",
-    saveOrder: "ترتیب محفوظ کریں",
     orderSourcePrefix: "ترتیب کا ماخذ",
-    dragHint: "ٹریکز گھسیٹیں اور ترتیب محفوظ کریں۔",
+    dragHint: "ترتیب بدلنے کے لیے ٹریکز گھسیٹیں۔",
     versionLabel: "ورژن",
     savedConcerts: "محفوظ کنسرٹس",
     hideConcerts: "کنسرٹس چھپائیں",
@@ -467,6 +466,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "چیٹ کا نام بدلیں",
     renameSavedConcert: "محفوظ کنسرٹ کا نام بدلیں",
     renameConcertVersion: "اس ورژن کا نام بدلیں",
+    doubleClickToRename: "نام بدلنے کے لیے دو بار کلک کریں",
   },
   id: {
     hideChats: "Sembunyikan obrolan",
@@ -482,9 +482,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `${days} hari lalu`,
     emptyInputPlaceholder: "Bagaimana saya bisa membantu hari ini?",
     defaultInputPlaceholder: "Jelaskan vibe konser: genre, alur, energi...",
-    saveOrder: "Simpan urutan",
     orderSourcePrefix: "Sumber urutan",
-    dragHint: "Seret lagu dan simpan urutannya.",
+    dragHint: "Seret lagu untuk mengubah urutan.",
     versionLabel: "Versi",
     savedConcerts: "Konser tersimpan",
     hideConcerts: "Sembunyikan konser",
@@ -499,6 +498,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "Ubah nama obrolan",
     renameSavedConcert: "Ubah nama konser tersimpan",
     renameConcertVersion: "Ubah nama versi ini",
+    doubleClickToRename: "Klik dua kali untuk mengganti nama",
   },
   es: {
     hideChats: "Ocultar chats",
@@ -514,9 +514,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `Hace ${days} días`,
     emptyInputPlaceholder: "¿En qué puedo ayudarte hoy?",
     defaultInputPlaceholder: "Describe el vibe del concierto: géneros, arco, energía...",
-    saveOrder: "Guardar orden",
     orderSourcePrefix: "Origen del orden",
-    dragHint: "Arrastra las pistas y guarda el orden.",
+    dragHint: "Arrastra las pistas para reordenar.",
     versionLabel: "Versión",
     savedConcerts: "Conciertos guardados",
     hideConcerts: "Ocultar conciertos",
@@ -531,6 +530,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "Renombrar chat",
     renameSavedConcert: "Renombrar concierto guardado",
     renameConcertVersion: "Renombrar esta versión",
+    doubleClickToRename: "Doble clic para renombrar",
   },
   de: {
     hideChats: "Chats ausblenden",
@@ -546,9 +546,8 @@ const CHAT_UI_TEXT: Record<
     daysAgo: (days) => `vor ${days} Tagen`,
     emptyInputPlaceholder: "Womit kann ich dir heute helfen?",
     defaultInputPlaceholder: "Beschreibe den Konzert-Vibe: Genres, Spannungsbogen, Energie...",
-    saveOrder: "Reihenfolge speichern",
     orderSourcePrefix: "Quelle der Reihenfolge",
-    dragHint: "Tracks ziehen und Reihenfolge speichern.",
+    dragHint: "Tracks ziehen, um die Reihenfolge zu ändern.",
     versionLabel: "Version",
     savedConcerts: "Gespeicherte Konzerte",
     hideConcerts: "Konzerte ausblenden",
@@ -563,6 +562,7 @@ const CHAT_UI_TEXT: Record<
     renameChat: "Chat umbenennen",
     renameSavedConcert: "Gespeichertes Konzert umbenennen",
     renameConcertVersion: "Diese Version umbenennen",
+    doubleClickToRename: "Doppelklick zum Umbenennen",
   },
 };
 
@@ -631,7 +631,7 @@ export function ChatPage({ locale }: ChatPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [prompt, setPrompt] = useState("");
-  const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
+  const [viewConcertVersion, setViewConcertVersion] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [savedConcertsOpen, setSavedConcertsOpen] = useState(true);
   const [savedConcerts, setSavedConcerts] = useState<SavedConcertItem[]>([]);
@@ -665,17 +665,25 @@ export function ChatPage({ locale }: ChatPageProps) {
     () => chats.find((c) => c.id === activeChatId) ?? null,
     [activeChatId, chats]
   );
+  useEffect(() => {
+    setViewConcertVersion(null);
+  }, [activeChatId, activeChat?.concerts.length]);
   const isActiveChatEmpty = activeChat !== null && activeChat.messages.length === 0;
   const showCenteredEmptyState = !activeChat || isActiveChatEmpty;
   const emptyHeadline = useMemo(() => {
     if (!activeChat) return localizedHeadlines[0];
     return pickHeadlineByChatId(activeChat.id, localizedHeadlines);
   }, [activeChat, localizedHeadlines]);
-  const activeConcert = activeChat?.concerts.at(-1) ?? null;
+  const activeConcert = useMemo(() => {
+    const list = activeChat?.concerts;
+    if (!list?.length) return null;
+    if (viewConcertVersion === null) return list.at(-1) ?? null;
+    return list.find((c) => c.version === viewConcertVersion) ?? list.at(-1) ?? null;
+  }, [activeChat, viewConcertVersion]);
   useEffect(() => {
     setEditingConcertLabel(false);
   }, [activeChatId, activeChat?.concerts.length, activeConcert?.version]);
-  const renderedOrder = draftOrder ?? activeConcert?.orderedTrackIds ?? [];
+  const renderedOrder = activeConcert?.orderedTrackIds ?? [];
   const activeConcertSavedId =
     activeChat && activeConcert ? `${activeChat.id}:${activeConcert.version}` : null;
   const isActiveConcertSaved =
@@ -719,7 +727,7 @@ export function ChatPage({ locale }: ChatPageProps) {
   function onCreateChat(): void {
     const created = createChat();
     refresh(created.id);
-    setDraftOrder(null);
+    setViewConcertVersion(null);
   }
 
   function onDeleteChat(chatId: string): void {
@@ -730,7 +738,7 @@ export function ChatPage({ locale }: ChatPageProps) {
     setChats(items);
     if (chatId === activeChatId) {
       setActiveChatId(items[0]?.id ?? null);
-      setDraftOrder(null);
+      setViewConcertVersion(null);
     }
   }
 
@@ -800,7 +808,7 @@ export function ChatPage({ locale }: ChatPageProps) {
     }
     refresh(targetId);
     setPrompt("");
-    setDraftOrder(null);
+    setViewConcertVersion(null);
   }
 
   function onSendPrompt(): void {
@@ -809,16 +817,7 @@ export function ChatPage({ locale }: ChatPageProps) {
     if (next) {
       refresh(next.id);
       setPrompt("");
-      setDraftOrder(null);
-    }
-  }
-
-  function onSaveOrder(): void {
-    if (!activeChat || !activeConcert || !draftOrder) return;
-    const next = updateConcertOrder(activeChat.id, activeConcert.version, draftOrder);
-    if (next) {
-      refresh(next.id);
-      setDraftOrder(null);
+      setViewConcertVersion(null);
     }
   }
 
@@ -903,29 +902,19 @@ export function ChatPage({ locale }: ChatPageProps) {
                             <button
                               type="button"
                               className={`${styles["chat-item-btn"]} ${chat.id === activeChatId ? styles.active : ""}`}
+                              title={ui.doubleClickToRename}
                               onClick={() => {
                                 setActiveChatId(chat.id);
-                                setDraftOrder(null);
+                                setViewConcertVersion(null);
                               }}
-                            >
-                              {chat.title || ui.untitled}
-                            </button>
-                          )}
-                          {renamingChatId !== chat.id ? (
-                            <button
-                              type="button"
-                              className={styles["rename-item-btn"]}
-                              aria-label={ui.renameChat}
-                              title={ui.renameChat}
-                              onClick={() => {
+                              onDoubleClick={(e) => {
+                                e.preventDefault();
                                 setRenamingChatId(chat.id);
                                 setChatRenameDraft(chat.title || "");
                               }}
                             >
-                              ✎
+                              {chat.title || ui.untitled}
                             </button>
-                          ) : (
-                            <span className={styles["rename-item-btn-spacer"]} aria-hidden="true" />
                           )}
                           <button
                             type="button"
@@ -1068,7 +1057,17 @@ export function ChatPage({ locale }: ChatPageProps) {
                       aria-label={ui.renameConcertVersion}
                     />
                   ) : (
-                    <>
+                    <span
+                      className={styles["dblclick-rename-target"]}
+                      title={ui.doubleClickToRename}
+                      role="group"
+                      aria-label={ui.doubleClickToRename}
+                      onDoubleClick={(e) => {
+                        e.preventDefault();
+                        setConcertLabelDraft(activeConcert.label ?? "");
+                        setEditingConcertLabel(true);
+                      }}
+                    >
                       <strong>
                         {activeConcert.label ?? `${ui.versionLabel} ${activeConcert.version}`}
                       </strong>
@@ -1078,19 +1077,7 @@ export function ChatPage({ locale }: ChatPageProps) {
                           · v{activeConcert.version}
                         </span>
                       ) : null}
-                      <button
-                        type="button"
-                        className={styles["rename-item-btn"]}
-                        aria-label={ui.renameConcertVersion}
-                        title={ui.renameConcertVersion}
-                        onClick={() => {
-                          setConcertLabelDraft(activeConcert.label ?? "");
-                          setEditingConcertLabel(true);
-                        }}
-                      >
-                        ✎
-                      </button>
-                    </>
+                    </span>
                   )}
                 </div>
                 <p className={styles.muted}>
@@ -1109,9 +1096,10 @@ export function ChatPage({ locale }: ChatPageProps) {
                         onDragStart={() => setDragIndex(idx)}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={() => {
-                          if (dragIndex === null || dragIndex === idx) return;
+                          if (dragIndex === null || dragIndex === idx || !activeChat || !activeConcert) return;
                           const next = reorder(renderedOrder, dragIndex, idx);
-                          setDraftOrder(next);
+                          updateConcertOrder(activeChat.id, activeConcert.version, next);
+                          refresh();
                           setDragIndex(null);
                         }}
                       >
@@ -1134,25 +1122,22 @@ export function ChatPage({ locale }: ChatPageProps) {
                   >
                     {ui.saveConcert}
                   </button>
-                  <button
-                    type="button"
-                    className={styles.btn}
-                    onClick={onSaveOrder}
-                    disabled={!draftOrder}
-                  >
-                    {ui.saveOrder}
-                  </button>
-                  {activeChat.concerts.map((c) => (
-                    <button
-                      key={c.version}
-                      type="button"
-                      className={styles.btn}
-                      onClick={() => setDraftOrder(c.orderedTrackIds)}
-                      title={c.label ? `${c.label} (v${c.version})` : `v${c.version}`}
-                    >
-                      {c.label ?? `v${c.version}`}
-                    </button>
-                  ))}
+                  {activeChat.concerts.map((c) => {
+                    const latest = activeChat.concerts.at(-1)?.version;
+                    const isViewing =
+                      viewConcertVersion === null ? c.version === latest : viewConcertVersion === c.version;
+                    return (
+                      <button
+                        key={c.version}
+                        type="button"
+                        className={`${styles.btn} ${isViewing ? styles["version-btn-active"] : ""}`}
+                        onClick={() => setViewConcertVersion(c.version)}
+                        title={c.label ? `${c.label} (v${c.version})` : `v${c.version}`}
+                      >
+                        {c.label ?? `v${c.version}`}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1212,29 +1197,19 @@ export function ChatPage({ locale }: ChatPageProps) {
                       <button
                         type="button"
                         className={styles["chat-item-btn"]}
+                        title={ui.doubleClickToRename}
                         onClick={() => {
                           setActiveChatId(item.chatId);
-                          setDraftOrder(null);
+                          setViewConcertVersion(null);
                         }}
-                      >
-                        {item.displayName ?? `${item.chatTitle} - v${item.version}`}
-                      </button>
-                    )}
-                    {renamingSavedId !== item.id ? (
-                      <button
-                        type="button"
-                        className={styles["rename-item-btn"]}
-                        aria-label={ui.renameSavedConcert}
-                        title={ui.renameSavedConcert}
-                        onClick={() => {
+                        onDoubleClick={(e) => {
+                          e.preventDefault();
                           setRenamingSavedId(item.id);
                           setSavedRenameDraft(item.displayName ?? `${item.chatTitle} - v${item.version}`);
                         }}
                       >
-                        ✎
+                        {item.displayName ?? `${item.chatTitle} - v${item.version}`}
                       </button>
-                    ) : (
-                      <span className={styles["rename-item-btn-spacer"]} aria-hidden="true" />
                     )}
                     <button
                       type="button"
