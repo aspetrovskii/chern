@@ -161,6 +161,9 @@ const CHAT_UI_TEXT: Record<
     saveConcert: string;
     noSavedConcerts: string;
     llmReplyLabel: string;
+    llmReplyPlaceholder: string;
+    searchSavedConcerts: string;
+    savedConcertsNoMatches: string;
   }
 > = {
   en: {
@@ -187,6 +190,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "Save concert",
     noSavedConcerts: "No saved concerts yet",
     llmReplyLabel: "LLM reply",
+    llmReplyPlaceholder:
+      "[Demo] Simulated model reply goes here — you should always see this box. Real copy is filled when the assistant message has text.",
+    searchSavedConcerts: "Search saved concerts",
+    savedConcertsNoMatches: "No saved concerts match your search.",
   },
   ru: {
     hideChats: "Скрыть чаты",
@@ -212,6 +219,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "Сохранить концерт",
     noSavedConcerts: "Пока нет сохраненных концертов",
     llmReplyLabel: "Ответ модели",
+    llmReplyPlaceholder:
+      "[Демо] Здесь показывается имитация ответа модели — блок всегда виден. Текст подставляется, когда в сообщении ассистента есть содержимое.",
+    searchSavedConcerts: "Поиск по сохранённым концертам",
+    savedConcertsNoMatches: "Нет концертов по этому запросу.",
   },
   tr: {
     hideChats: "Sohbetleri gizle",
@@ -237,6 +248,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "Konseri kaydet",
     noSavedConcerts: "Henüz kaydedilen konser yok",
     llmReplyLabel: "LLM yanıtı",
+    llmReplyPlaceholder:
+      "[Demo] Örnek model yanıtı burada görünür. Asıl metin asistan mesajında içerik olduğunda doldurulur.",
+    searchSavedConcerts: "Kayıtlı konserlerde ara",
+    savedConcertsNoMatches: "Aramanızla eşleşen konser yok.",
   },
   hi: {
     hideChats: "चैट छिपाएँ",
@@ -262,6 +277,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "कॉन्सर्ट सहेजें",
     noSavedConcerts: "अभी तक कोई सहेजा गया कॉन्सर्ट नहीं",
     llmReplyLabel: "LLM उत्तर",
+    llmReplyPlaceholder:
+      "[डेमो] नकली मॉडल उत्तर यहाँ दिखेगा। असली टेक्स्ट तब भरता है जब सहायक संदेश में सामग्री हो।",
+    searchSavedConcerts: "सहेजे गए कॉन्सर्ट खोजें",
+    savedConcertsNoMatches: "इस खोज से कोई कॉन्सर्ट मेल नहीं खाता।",
   },
   zh: {
     hideChats: "隐藏聊天",
@@ -287,6 +306,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "保存演出",
     noSavedConcerts: "暂无已保存演出",
     llmReplyLabel: "LLM 回复",
+    llmReplyPlaceholder:
+      "[演示] 模拟模型回复显示在此。助手消息有正文时会自动填入。",
+    searchSavedConcerts: "搜索已保存演出",
+    savedConcertsNoMatches: "没有符合搜索的演出。",
   },
   ur: {
     hideChats: "چیٹس چھپائیں",
@@ -312,6 +335,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "کنسرٹ محفوظ کریں",
     noSavedConcerts: "ابھی کوئی محفوظ کنسرٹ نہیں",
     llmReplyLabel: "LLM کا جواب",
+    llmReplyPlaceholder:
+      "[ڈیمو] ماڈل کا نمونہ جواب یہاں نظر آئے گا۔ معاون پیغام میں متن ہو تو اصل مواد بھرا جائے گا۔",
+    searchSavedConcerts: "محفوظ کنسرٹس تلاش کریں",
+    savedConcertsNoMatches: "تلاش سے کوئی کنسرٹ میل نہیں کھاتا۔",
   },
   id: {
     hideChats: "Sembunyikan obrolan",
@@ -337,6 +364,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "Simpan konser",
     noSavedConcerts: "Belum ada konser tersimpan",
     llmReplyLabel: "Balasan LLM",
+    llmReplyPlaceholder:
+      "[Demo] Balasan model simulasi muncul di sini. Teks asli diisi jika pesan asisten berisi teks.",
+    searchSavedConcerts: "Cari konser tersimpan",
+    savedConcertsNoMatches: "Tidak ada konser yang cocok dengan pencarian.",
   },
   es: {
     hideChats: "Ocultar chats",
@@ -362,6 +393,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "Guardar concierto",
     noSavedConcerts: "Aún no hay conciertos guardados",
     llmReplyLabel: "Respuesta del LLM",
+    llmReplyPlaceholder:
+      "[Demo] Aquí va la respuesta simulada del modelo. El texto real aparece cuando el mensaje del asistente tiene contenido.",
+    searchSavedConcerts: "Buscar conciertos guardados",
+    savedConcertsNoMatches: "Ningún concierto coincide con la búsqueda.",
   },
   de: {
     hideChats: "Chats ausblenden",
@@ -387,6 +422,10 @@ const CHAT_UI_TEXT: Record<
     saveConcert: "Konzert speichern",
     noSavedConcerts: "Noch keine Konzerte gespeichert",
     llmReplyLabel: "LLM-Antwort",
+    llmReplyPlaceholder:
+      "[Demo] Hier erscheint die simulierte Modellantwort. Echter Text wird gesetzt, wenn die Assistentennachricht Inhalt hat.",
+    searchSavedConcerts: "Gespeicherte Konzerte durchsuchen",
+    savedConcertsNoMatches: "Keine Konzerte passen zur Suche.",
   },
 };
 
@@ -459,6 +498,7 @@ export function ChatPage({ locale }: ChatPageProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [savedConcertsOpen, setSavedConcertsOpen] = useState(true);
   const [savedConcerts, setSavedConcerts] = useState<SavedConcertItem[]>([]);
+  const [savedConcertSearch, setSavedConcertSearch] = useState("");
 
   useEffect(() => {
     const items = listChats();
@@ -508,6 +548,14 @@ export function ChatPage({ locale }: ChatPageProps) {
     return [...map.entries()];
   }, [chats, locale, search]);
 
+  const filteredSavedConcerts = useMemo(() => {
+    const q = savedConcertSearch.trim().toLowerCase();
+    if (!q) return savedConcerts;
+    return savedConcerts.filter((item) => {
+      const hay = `${item.chatTitle} v${item.version}`.toLowerCase();
+      return hay.includes(q) || String(item.version).includes(q);
+    });
+  }, [savedConcerts, savedConcertSearch]);
 
   function refresh(nextActiveId?: string): void {
     const items = listChats();
@@ -624,13 +672,8 @@ export function ChatPage({ locale }: ChatPageProps) {
         {sidebarOpen && (
           <>
             <div className={styles["search-wrap"]}>
-              <span className={styles["search-icon"]} aria-hidden="true">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M11 4a7 7 0 105.15 11.75l3.55 3.55a1 1 0 001.4-1.4l-3.55-3.55A7 7 0 0011 4z"
-                    fill="currentColor"
-                  />
-                </svg>
+              <span className={styles["search-emoji"]} aria-hidden="true" title={ui.searchChats}>
+                🔎
               </span>
               <input
                 type="text"
@@ -736,13 +779,25 @@ export function ChatPage({ locale }: ChatPageProps) {
                 m.role === "assistant" ? (
                   <div key={m.id} className={`${styles.bubble} ${styles.assistant}`}>
                     <div className={styles["bubble-llm-label"]}>{ui.llmReplyLabel}</div>
-                    <div className={styles["bubble-llm-field"]}>{m.content}</div>
+                    <div
+                      className={`${styles["bubble-llm-field"]} ${!m.content.trim() ? styles["bubble-llm-field--empty"] : ""}`}
+                    >
+                      {m.content.trim() ? m.content : ui.llmReplyPlaceholder}
+                    </div>
                   </div>
                 ) : (
                   <div key={m.id} className={`${styles.bubble} ${styles.user}`}>
                     {m.content}
                   </div>
                 )
+              )}
+              {activeChat.messages.length > 0 && activeChat.messages.at(-1)?.role === "user" && (
+                <div className={`${styles.bubble} ${styles.assistant}`}>
+                  <div className={styles["bubble-llm-label"]}>{ui.llmReplyLabel}</div>
+                  <div className={`${styles["bubble-llm-field"]} ${styles["bubble-llm-field--empty"]}`}>
+                    {ui.llmReplyPlaceholder}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -866,8 +921,20 @@ export function ChatPage({ locale }: ChatPageProps) {
 
         {savedConcertsOpen && (
           <div className={styles["chat-groups"]}>
+            <div className={styles["search-wrap"]}>
+              <span className={styles["search-emoji"]} aria-hidden="true" title={ui.searchSavedConcerts}>
+                🎼
+              </span>
+              <input
+                type="text"
+                value={savedConcertSearch}
+                onChange={(e) => setSavedConcertSearch(e.target.value)}
+                placeholder={ui.searchSavedConcerts}
+                className={styles["search-input"]}
+              />
+            </div>
             <ul className={styles["chat-list"]}>
-              {savedConcerts.map((item) => (
+              {filteredSavedConcerts.map((item) => (
                 <li key={item.id}>
                   <div className={styles["chat-item-row"]}>
                     <button
@@ -893,6 +960,9 @@ export function ChatPage({ locale }: ChatPageProps) {
               ))}
             </ul>
             {savedConcerts.length === 0 && <p className={styles.muted}>{ui.noSavedConcerts}</p>}
+            {savedConcerts.length > 0 && filteredSavedConcerts.length === 0 && (
+              <p className={styles.muted}>{ui.savedConcertsNoMatches}</p>
+            )}
           </div>
         )}
       </aside>
