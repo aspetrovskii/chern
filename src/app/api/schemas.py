@@ -111,6 +111,10 @@ class PoolCreateRequest(BaseModel):
     album_id: str | None = None
     playlist_id: str | None = None
     artist_id: str | None = None
+    spotify_url: str | None = Field(
+        default=None,
+        description="open.spotify.com or spotify: URI (playlist, album, artist, or track).",
+    )
 
 
 class PoolDeleteRequest(BaseModel):

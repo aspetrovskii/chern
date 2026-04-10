@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAccessToken } from "../../lib/api/http";
 import { getSessionUser, syncSessionFromApiMe } from "../../lib/auth";
@@ -525,6 +525,20 @@ function sectionLabelByDay(iso: string, locale: Locale): string {
 
 type ChevronDir = "left" | "right";
 
+/** Merge full chat into a list of summary rows; prepend if id missing (stale list responses). */
+function upsertFullIntoChatRows(rows: ChatRecord[], full: ChatRecord): ChatRecord[] {
+  const i = rows.findIndex((r) => r.id === full.id);
+  if (i === -1) return [full, ...rows];
+  const next = [...rows];
+  next[i] = full;
+  return next;
+}
+
+function mergeSummariesWithFull(items: ChatRecord[], full: ChatRecord | null): ChatRecord[] {
+  if (!full) return items;
+  return upsertFullIntoChatRows(items, full);
+}
+
 function SidebarChevron({ direction }: { direction: ChevronDir }) {
   return (
     <span className={styles["btn-icon__glyph"]} aria-hidden="true">
@@ -558,6 +572,7 @@ export function ChatPage({ locale }: ChatPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [chats, setChats] = useState<ChatRecord[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const activeChatIdRef = useRef<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -568,6 +583,10 @@ export function ChatPage({ locale }: ChatPageProps) {
   const [chatRenameDraft, setChatRenameDraft] = useState("");
   const [editingConcertLabel, setEditingConcertLabel] = useState(false);
   const [concertLabelDraft, setConcertLabelDraft] = useState("");
+
+  useEffect(() => {
+    activeChatIdRef.current = activeChatId;
+  }, [activeChatId]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -585,18 +604,39 @@ export function ChatPage({ locale }: ChatPageProps) {
   }, [navigate]);
 
   useEffect(() => {
+    let alive = true;
     void (async () => {
       const items = await apiListChats();
-      setChats(items);
-      const first = items[0]?.id ?? null;
-      setActiveChatId(first);
-      if (first) {
-        const full = await apiLoadChatFull(first);
+      if (!alive) return;
+      let pickId: string | null = null;
+      setChats((prev) => {
+        const serverIds = new Set(items.map((x) => x.id));
+        const kept = prev.filter((p) => !serverIds.has(p.id));
+        return [...kept, ...items];
+      });
+      setActiveChatId((cur) => {
+        if (!cur) {
+          pickId = items[0]?.id ?? null;
+          return pickId;
+        }
+        if (items.some((x) => x.id === cur)) {
+          pickId = cur;
+          return cur;
+        }
+        pickId = cur;
+        return cur;
+      });
+      if (pickId && alive) {
+        const full = await apiLoadChatFull(pickId);
+        if (!alive) return;
         if (full) {
-          setChats((prev) => prev.map((x) => (x.id === full.id ? full : x)));
+          setChats((prev) => upsertFullIntoChatRows(prev, full));
         }
       }
     })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -609,7 +649,7 @@ export function ChatPage({ locale }: ChatPageProps) {
         setViewConcertVersion(null);
         const full = await apiLoadChatFull(c);
         if (full) {
-          setChats((prev) => prev.map((x) => (x.id === full.id ? full : x)));
+          setChats((prev) => upsertFullIntoChatRows(prev, full));
         }
       }
       setSearchParams({}, { replace: true });
@@ -622,7 +662,7 @@ export function ChatPage({ locale }: ChatPageProps) {
     void (async () => {
       const full = await apiLoadChatFull(activeChatId);
       if (cancelled || !full) return;
-      setChats((prev) => prev.map((c) => (c.id === full.id ? full : c)));
+      setChats((prev) => upsertFullIntoChatRows(prev, full));
     })();
     return () => {
       cancelled = true;
@@ -675,25 +715,24 @@ export function ChatPage({ locale }: ChatPageProps) {
   function refresh(nextActiveId?: string): void {
     void (async () => {
       const items = await apiListChats();
-      const targetId = nextActiveId ?? activeChatId;
-      let list = items;
+      const targetId = nextActiveId ?? activeChatIdRef.current;
+      let list: ChatRecord[] = items;
       if (targetId) {
         const full = await apiLoadChatFull(targetId);
-        if (full) {
-          list = items.map((c) => (c.id === full.id ? full : c));
-        }
+        list = mergeSummariesWithFull(items, full);
       }
       setChats(list);
       if (nextActiveId) {
         setActiveChatId(nextActiveId);
         return;
       }
-      if (list.length > 0 && activeChatId && !list.some((x) => x.id === activeChatId)) {
+      const cur = activeChatIdRef.current;
+      if (list.length > 0 && cur && !list.some((x) => x.id === cur)) {
         const nid = list[0].id;
         setActiveChatId(nid);
-        const full = await apiLoadChatFull(nid);
-        if (full) {
-          setChats((prev) => prev.map((c) => (c.id === full.id ? full : c)));
+        const full2 = await apiLoadChatFull(nid);
+        if (full2) {
+          setChats((prev) => mergeSummariesWithFull(prev, full2));
         }
       }
     })();
@@ -800,8 +839,10 @@ export function ChatPage({ locale }: ChatPageProps) {
 
   function onSendPrompt(): void {
     if (!activeChat || !prompt.trim()) return;
+    const chatId = activeChat.id;
+    const text = prompt.trim();
     void (async () => {
-      const next = await apiPostChatPrompt(activeChat.id, prompt.trim(), locale);
+      const next = await apiPostChatPrompt(chatId, text, locale);
       if (next) {
         refresh(next.id);
         setPrompt("");
@@ -833,9 +874,21 @@ export function ChatPage({ locale }: ChatPageProps) {
           >
             <SidebarChevron direction={sidebarOpen ? "left" : "right"} />
           </button>
-          {sidebarOpen && (
+          {sidebarOpen ? (
             <button type="button" className={`${styles.btn} ${styles["new-chat-btn"]}`} onClick={onCreateChat}>
               {ui.newChat}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`${styles.btn} ${styles["btn-icon"]}`}
+              aria-label={ui.newChat}
+              title={ui.newChat}
+              onClick={onCreateChat}
+            >
+              <span className={styles["new-chat-icon"]} aria-hidden="true">
+                +
+              </span>
             </button>
           )}
         </div>

@@ -45,14 +45,14 @@ class ConcertPipeline:
             mode, source_playlist_id, user_text, target_count, pool_track_ids
         )
         scored: list[CandidateTrack] = []
-        for track in candidates:
-            tags = self.llm.tag_track(
-                TrackInput(
-                    spotify_track_id=track.spotify_track_id,
-                    raw_metadata={"name": track.name, "artist": track.artist, "uri": track.uri},
-                    audio_features={"energy": track.energy, "valence": track.valence, "tempo": track.tempo},
-                )
+        max_llm_tags = 12
+        for i, track in enumerate(candidates):
+            ti = TrackInput(
+                spotify_track_id=track.spotify_track_id,
+                raw_metadata={"name": track.name, "artist": track.artist, "uri": track.uri},
+                audio_features={"energy": track.energy, "valence": track.valence, "tempo": track.tempo},
             )
+            tags = self.llm.tag_track(ti) if i < max_llm_tags else self.llm.track_tags_from_audio_only(ti)
             boost = tags.mood_scores.energy * 0.05
             scored.append(
                 CandidateTrack(
@@ -74,7 +74,7 @@ class ConcertPipeline:
         target_count: int,
         pool_track_ids: list[str] | None,
     ) -> list[SpotifyTrack]:
-        pool_target = min(max(target_count * 5, 20), 120)
+        pool_target = min(max(target_count * 3, 15), 48)
         if mode == "fixed_pool":
             ids = list(dict.fromkeys(pool_track_ids or []))[:pool_target]
             if ids:

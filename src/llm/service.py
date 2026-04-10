@@ -46,6 +46,10 @@ class LLMService:
             self._fallback_count += 1
             return self._fallback_intent(text)
 
+    def track_tags_from_audio_only(self, track_input: TrackInput) -> TrackTagsV1:
+        """Heuristic tags without LLM (used when capping per-request LLM work)."""
+        return self._fallback_track_tags(track_input)
+
     def tag_track(self, track_input: TrackInput) -> TrackTagsV1:
         cached = self.cache.get(track_input.spotify_track_id, self.llm_version)
         if cached:

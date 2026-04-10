@@ -63,7 +63,17 @@
 }
 
 .sidebar-closed .sidebar-top {
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.new-chat-icon {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .new-chat-btn {

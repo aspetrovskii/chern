@@ -54,9 +54,16 @@ export async function apiRequest<T>(path: string, init: RequestInit & { json?: u
     }
   }
   if (!res.ok) {
-    const o = body as { error_code?: string; message?: string };
+    const o = body as { error_code?: string; message?: string; detail?: string | string[] };
     const code = o?.error_code ?? `http_${res.status}`;
-    const msg = typeof o?.message === "string" ? o.message : res.statusText;
+    let msg = typeof o?.message === "string" ? o.message : res.statusText;
+    if (msg === res.statusText && o?.detail !== undefined) {
+      if (typeof o.detail === "string") {
+        msg = o.detail;
+      } else if (Array.isArray(o.detail) && o.detail.length > 0) {
+        msg = o.detail.map(String).join("; ");
+      }
+    }
     if (res.status === 401 || res.status === 403) {
       clearAccessToken();
       if (!window.location.hash.includes("/auth")) {

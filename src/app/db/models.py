@@ -26,7 +26,7 @@ class Chat(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(255), default="New chat")
-    mode: Mapped[str] = mapped_column(String(32), default="fixed_pool")
+    mode: Mapped[str] = mapped_column(String(32), default="spotify_discovery")
     source_spotify_playlist_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     target_track_count: Mapped[int] = mapped_column(Integer, default=10)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)

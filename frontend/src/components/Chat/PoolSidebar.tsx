@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { ApiError } from "../../lib/api/http";
 import { t, type Locale } from "../../lib/i18n";
 import type { ChatMode, ChatRecord } from "../../lib/concertMvp";
 import {
@@ -9,6 +10,7 @@ import {
   apiPostPoolFromAlbumId,
   apiPostPoolFromArtistId,
   apiPostPoolFromPlaylistId,
+  apiPostPoolFromSpotifyUrl,
   apiPostPoolFromTrackIds,
   apiPostRebuildConcertFromPool,
   apiDeletePoolTrack,
@@ -55,6 +57,7 @@ type PoolSidebarProps = {
 export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps) {
   const [open, setOpen] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [spotifyLinkInput, setSpotifyLinkInput] = useState("");
   const [playlistIdInput, setPlaylistIdInput] = useState("");
   const [albumIdInput, setAlbumIdInput] = useState("");
   const [artistIdInput, setArtistIdInput] = useState("");
@@ -197,6 +200,47 @@ export function PoolSidebar({ locale, activeChat, onRefresh }: PoolSidebarProps)
           >
             {t(locale, "pool_load_from_source")}
           </button>
+
+          <p className={styles["pool-section-title"]}>{t(locale, "pool_add_by_link")}</p>
+          <div className={styles["pool-id-row"]}>
+            <input
+              type="text"
+              className={styles["pool-text-input"]}
+              value={spotifyLinkInput}
+              onChange={(e) => setSpotifyLinkInput(e.target.value)}
+              placeholder={t(locale, "pool_ph_link")}
+              aria-label={t(locale, "pool_add_by_link")}
+            />
+            <button
+              type="button"
+              className={styles.btn}
+              disabled={busy}
+              onClick={() => {
+                const raw = spotifyLinkInput.trim();
+                if (!raw) {
+                  setFeedback(t(locale, "pool_unknown"));
+                  clearFeedbackSoon();
+                  return;
+                }
+                setBusy(true);
+                void (async () => {
+                  try {
+                    await apiPostPoolFromSpotifyUrl(chatId, raw);
+                    setSpotifyLinkInput("");
+                    onRefresh();
+                  } catch (e) {
+                    const msg = e instanceof ApiError ? e.message : t(locale, "pool_unknown");
+                    setFeedback(msg);
+                    clearFeedbackSoon();
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
+              }}
+            >
+              {t(locale, "pool_add_link")}
+            </button>
+          </div>
 
           <p className={styles["pool-section-title"]}>{t(locale, "pool_add_by_id")}</p>
           <p className={styles["pool-demo-hint"]}>{t(locale, "pool_demo_hint")}</p>

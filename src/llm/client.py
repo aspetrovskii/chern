@@ -6,6 +6,8 @@ import time
 from dataclasses import dataclass
 from typing import Protocol
 
+import httpx
+
 
 class LLMTransport(Protocol):
     def complete(self, prompt: str, timeout_seconds: float) -> str:
@@ -34,6 +36,16 @@ class LLMClient:
                 if not isinstance(payload, dict):
                     raise ValueError("LLM response is not a JSON object")
                 return payload
+            except httpx.HTTPStatusError as exc:
+                # API key / IAM expired or forbidden — retries only spam logs and delay fallback.
+                if exc.response is not None and exc.response.status_code in (401, 403):
+                    raise RuntimeError("LLM authentication failed (401/403)") from exc
+                last_error = exc
+                if attempt == self.retry_policy.attempts:
+                    break
+                backoff = self.retry_policy.base_backoff_seconds * (2 ** (attempt - 1))
+                jitter = random.uniform(0.0, max(0.0, self.retry_policy.max_jitter_seconds))
+                time.sleep(backoff + jitter)
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 if attempt == self.retry_policy.attempts:
@@ -48,6 +60,17 @@ def _extract_json(raw: str) -> dict | list:
     text = raw.strip()
     if text.startswith("```"):
         lines = text.splitlines()
-        if len(lines) >= 3:
-            text = "\n".join(lines[1:-1]).strip()
-    return json.loads(text)
+        if len(lines) >= 2:
+            body = "\n".join(lines[1:])
+            body = body.rstrip()
+            if body.endswith("```"):
+                body = body[: -3].rstrip()
+            text = body
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start >= 0 and end > start:
+            return json.loads(text[start : end + 1])
+        raise

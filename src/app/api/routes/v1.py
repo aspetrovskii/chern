@@ -42,6 +42,13 @@ from app.db.session import get_db
 from app.services.providers import get_concert_pipeline
 from llm.cache import SQLiteTrackCache
 from spotify.factory import build_spotify_catalog
+from spotify.link_parse import (
+    normalize_album_id,
+    normalize_artist_id,
+    normalize_playlist_id,
+    normalize_track_id_token,
+    parse_spotify_link,
+)
 from spotify.oauth import exchange_code_for_tokens, fetch_spotify_me, spotify_authorize_url
 
 router = APIRouter(prefix=settings.api_prefix)
@@ -183,7 +190,7 @@ def create_chat(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ChatDTO:
-    chat = Chat(user_id=current_user.id, title=payload.title)
+    chat = Chat(user_id=current_user.id, title=payload.title, mode="spotify_discovery")
     db.add(chat)
     db.commit()
     db.refresh(chat)
@@ -264,19 +271,17 @@ def post_message(
 
     pool_rows = db.scalars(select(ChatPoolTrack).where(ChatPoolTrack.chat_id == chat.id)).all()
     pool_ids = [r.spotify_track_id for r in pool_rows]
-    if chat.mode == "fixed_pool":
+    effective_mode = chat.mode
+    if effective_mode == "fixed_pool":
         has_playlist = bool((chat.source_spotify_playlist_id or "").strip())
         if not pool_ids and not has_playlist:
-            raise HTTPException(
-                status_code=400,
-                detail="fixed_pool: add tracks to the chat pool (Spotify playlist link is optional)",
-            )
+            effective_mode = "spotify_discovery"
 
     pipeline = get_concert_pipeline(settings, current_user)
     result = pipeline.run(
         user_text=payload.content,
         chat_id=chat.id,
-        mode=chat.mode,
+        mode=effective_mode,
         source_playlist_id=chat.source_spotify_playlist_id,
         pool_track_ids=pool_ids,
         target_count=chat.target_track_count,
@@ -476,6 +481,55 @@ def spotify_playlists(current_user: User = Depends(get_current_user)) -> list[Sp
     return [SpotifyPlaylistDTO(id=p["id"], name=p["name"]) for p in spotify.get_user_playlists()]
 
 
+def _pool_create_normalized(payload: PoolCreateRequest) -> tuple[list[str], list[str], list[str], list[str]]:
+    """Returns (playlist_ids, album_ids, artist_ids, track_ids) after URL/URI normalization."""
+    url_raw = (payload.spotify_url or "").strip()
+    url_ref = parse_spotify_link(url_raw) if url_raw else None
+    if url_raw and url_ref is None:
+        raise HTTPException(status_code=400, detail="invalid_spotify_url")
+
+    playlist_ids: list[str] = []
+    album_ids: list[str] = []
+    artist_ids: list[str] = []
+    track_ids: list[str] = []
+
+    try:
+        if payload.playlist_id:
+            pid = normalize_playlist_id(payload.playlist_id)
+            if pid:
+                playlist_ids.append(pid)
+        if payload.album_id:
+            aid = normalize_album_id(payload.album_id)
+            if aid:
+                album_ids.append(aid)
+        if payload.artist_id:
+            arid = normalize_artist_id(payload.artist_id)
+            if arid:
+                artist_ids.append(arid)
+        for token in payload.track_ids:
+            tid = normalize_track_id_token(token)
+            if tid:
+                track_ids.append(tid)
+        if url_ref:
+            kind, sid = url_ref
+            if kind == "playlist":
+                playlist_ids.append(sid)
+            elif kind == "album":
+                album_ids.append(sid)
+            elif kind == "artist":
+                artist_ids.append(sid)
+            else:
+                track_ids.append(sid)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    playlist_ids = list(dict.fromkeys(playlist_ids))
+    album_ids = list(dict.fromkeys(album_ids))
+    artist_ids = list(dict.fromkeys(artist_ids))
+    track_ids = list(dict.fromkeys(track_ids))
+    return playlist_ids, album_ids, artist_ids, track_ids
+
+
 @router.post("/chats/{chat_id}/pool", status_code=status.HTTP_204_NO_CONTENT)
 def add_pool_tracks(
     chat_id: int,
@@ -484,15 +538,16 @@ def add_pool_tracks(
     current_user: User = Depends(get_current_user),
 ) -> None:
     chat = _get_chat_or_404(db, current_user.id, chat_id)
-    source_ids = list(payload.track_ids)
+    playlist_ids, album_ids, artist_ids, track_ids = _pool_create_normalized(payload)
+    source_ids = list(track_ids)
     refresh_plain = decrypt_secret(current_user.refresh_token_encrypted)
     spotify, _ = build_spotify_catalog(settings, refresh_plain)
-    if payload.playlist_id:
-        source_ids.extend([t.spotify_track_id for t in spotify.get_tracks_for_playlist(payload.playlist_id)])
-    if payload.album_id:
-        source_ids.extend([t.spotify_track_id for t in spotify.get_tracks_for_album(payload.album_id)])
-    if payload.artist_id:
-        source_ids.extend([t.spotify_track_id for t in spotify.get_tracks_for_artist(payload.artist_id)])
+    for pid in playlist_ids:
+        source_ids.extend([t.spotify_track_id for t in spotify.get_tracks_for_playlist(pid)])
+    for aid in album_ids:
+        source_ids.extend([t.spotify_track_id for t in spotify.get_tracks_for_album(aid)])
+    for arid in artist_ids:
+        source_ids.extend([t.spotify_track_id for t in spotify.get_tracks_for_artist(arid)])
     source_ids = list(dict.fromkeys(source_ids))[:300]
     for track_id in source_ids:
         exists = db.scalar(

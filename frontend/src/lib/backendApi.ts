@@ -353,6 +353,15 @@ export async function apiListSpotifyPlaylists(): Promise<SpotifyPlaylistRow[]> {
   return apiRequest<SpotifyPlaylistRow[]>("/spotify/playlists");
 }
 
+export async function apiPostPoolFromSpotifyUrl(chatId: string, spotifyUrl: string): Promise<ChatRecord | null> {
+  const id = Number(chatId);
+  if (Number.isNaN(id)) return null;
+  const u = spotifyUrl.trim();
+  if (!u) return apiLoadChatFull(chatId);
+  await apiRequest(`/chats/${id}/pool`, { method: "POST", json: { spotify_url: u } });
+  return apiLoadChatFull(chatId);
+}
+
 export async function apiPostPoolFromPlaylistId(chatId: string, playlistId: string): Promise<ChatRecord | null> {
   const id = Number(chatId);
   if (Number.isNaN(id)) return null;

@@ -33,7 +33,7 @@ class YandexFoundationTransport:
             "completionOptions": {
                 "stream": False,
                 "temperature": self._temperature,
-                "maxTokens": str(self._max_tokens),
+                "maxTokens": int(self._max_tokens),
             },
             "messages": [
                 {

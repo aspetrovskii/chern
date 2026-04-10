@@ -22,6 +22,7 @@ export {
   apiPostPoolFromAlbumId,
   apiPostPoolFromArtistId,
   apiPostPoolFromPlaylistId,
+  apiPostPoolFromSpotifyUrl,
   apiPostPoolFromTrackIds,
   apiPostPoolTrackIds,
   apiPostRebuildConcertFromPool,
