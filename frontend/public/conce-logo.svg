@@ -1,0 +1,42 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="28" y1="20" x2="228" y2="238" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FDE047">
+        <animate attributeName="offset" values="0;0.12;0" dur="12s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="0.2" stop-color="#FB923C"/>
+      <stop offset="0.42" stop-color="#EC4899"/>
+      <stop offset="0.68" stop-color="#9333EA"/>
+      <stop offset="1" stop-color="#38BDF8">
+        <animate attributeName="offset" values="1;0.86;1" dur="12s" repeatCount="indefinite"/>
+      </stop>
+      <animateTransform attributeName="gradientTransform" type="rotate" values="0 128 128;360 128 128" dur="20s" repeatCount="indefinite"/>
+    </linearGradient>
+    <radialGradient id="g2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(196 58) rotate(132.347) scale(110 84)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="neomorph" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="-5" dy="-5" stdDeviation="6" flood-color="#ffffff" flood-opacity="0.2"/>
+      <feDropShadow dx="7" dy="8" stdDeviation="9" flood-color="#020712" flood-opacity="0.72"/>
+    </filter>
+    <filter id="innerSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feOffset dx="-2" dy="-2"/>
+      <feGaussianBlur stdDeviation="3" result="offset-blur"/>
+      <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
+      <feFlood flood-color="#ffffff" flood-opacity="0.15" result="color"/>
+      <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="72" fill="#121923" filter="url(#neomorph)"/>
+  <rect x="16" y="16" width="224" height="224" rx="72" fill="url(#g2)" opacity="0.9"/>
+  <circle cx="128" cy="128" r="90" stroke="url(#g1)" stroke-width="12" opacity="0.9"/>
+  <g filter="url(#innerSoft)">
+    <path d="M108 76V152C108 170 122 182 140 182C158 182 172 170 172 152C172 134 158 122 140 122C132 122 124 124 118 129V88L176 74V52L108 66V76Z" fill="url(#g1)"/>
+  </g>
+  <path d="M40 164C62 148 84 144 106 154" stroke="url(#g1)" stroke-width="8" stroke-linecap="round" opacity="0.84"/>
+  <path d="M52 194C78 176 112 170 146 182" stroke="url(#g1)" stroke-width="8" stroke-linecap="round" opacity="0.72"/>
+  <circle cx="192" cy="62" r="8" fill="#FDE047"/>
+  <circle cx="192" cy="62" r="16" stroke="#FDE047" stroke-opacity="0.45"/>
+</svg>

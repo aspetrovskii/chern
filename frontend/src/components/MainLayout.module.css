@@ -1,0 +1,63 @@
+.main-area {
+  flex: 1;
+  padding: 2rem 1.5rem;
+  min-height: 0;
+}
+
+.main-area--with-player {
+  padding-bottom: 7.5rem;
+}
+
+.main-area--with-player-collapsed {
+  padding-bottom: 3.75rem;
+}
+
+.main-area--auth {
+  padding-top: 1.5rem;
+}
+
+.main-area--chat {
+  display: flex;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+
+.main-area--chat > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Reserve space for fixed NowPlaying on /chat (same footprint as other routes). */
+.main-area--chat-player {
+  padding-bottom: 7.5rem;
+}
+
+.main-area--chat-player-collapsed {
+  padding-bottom: 3.75rem;
+}
+
+.page-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: rgba(240, 242, 248, 0.95);
+  letter-spacing: 0.02em;
+}
+
+.page-placeholder {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+.page-placeholder p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .page-title {
+    font-size: 1.4rem;
+  }
+}

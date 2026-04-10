@@ -1,0 +1,97 @@
+.auth-page-root {
+  max-width: 24rem;
+  margin: 0 auto;
+}
+
+.auth-page__shell {
+  padding: 1.75rem 1.5rem 1.5rem;
+}
+
+.auth-page__title {
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+.auth-page__hint {
+  margin: 0 0 1.1rem;
+  text-align: center;
+  color: rgba(226, 232, 240, 0.86);
+  line-height: 1.45;
+}
+
+.auth-page__err {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: rgba(254, 202, 202, 0.95);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.auth-page__actions {
+  margin-top: 1rem;
+}
+
+.auth-page__spotify-btn {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  background: #0b0b0c;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font: inherit;
+  font-size: 0.96rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.auth-page__spotify-btn:hover {
+  background: #111214;
+}
+
+.auth-page__spotify-btn:focus-visible {
+  outline: 2px solid rgba(30, 215, 96, 0.8);
+  outline-offset: 2px;
+}
+
+.auth-page__spotify-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.auth-page__spotify-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.auth-page__back {
+  display: inline-block;
+  margin-top: 1.1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(165, 180, 252, 0.95);
+  text-decoration: none;
+}
+
+.auth-page__back:hover {
+  color: #c7d2fe;
+  text-decoration: underline;
+}
+
+.auth-page__back:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.65);
+  outline-offset: 3px;
+  border-radius: 6px;
+}

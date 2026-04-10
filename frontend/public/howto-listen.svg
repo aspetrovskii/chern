@@ -1,0 +1,53 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="70" y1="35" x2="742" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10142A"/>
+      <stop offset="1" stop-color="#1A1230"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="210" y1="150" x2="580" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="0.45" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="24" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="784" height="434" rx="26" fill="url(#bg)" stroke="rgba(255,255,255,0.28)"/>
+  <g opacity="0.75" filter="url(#glow)">
+    <ellipse cx="210" cy="350" rx="150" ry="74" fill="#2563EB">
+      <animate attributeName="cx" values="210;225;210" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="350;338;350" dur="8s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="680" cy="80" rx="120" ry="66" fill="#DB2777">
+      <animate attributeName="cx" values="680;664;680" dur="9s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="80;94;80" dur="9s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+  <circle cx="390" cy="225" r="130" stroke="url(#ring)" stroke-width="12" opacity="0.8">
+    <animateTransform attributeName="transform" type="rotate" values="0 390 225;360 390 225" dur="16s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="390" cy="225" r="92" stroke="#A855F7" stroke-opacity="0.45" stroke-width="8">
+    <animateTransform attributeName="transform" type="rotate" values="360 390 225;0 390 225" dur="11s" repeatCount="indefinite"/>
+  </circle>
+  <path d="M330 225C330 191.863 356.863 165 390 165V165C423.137 165 450 191.863 450 225V278C450 311.137 423.137 338 390 338V338C356.863 338 330 311.137 330 278V225Z" fill="#0F172A" fill-opacity="0.75" stroke="#E2E8F0" stroke-opacity="0.35"/>
+  <path d="M330 226C330 206 346 190 366 190H414C434 190 450 206 450 226" stroke="#93C5FD" stroke-opacity="0.55" stroke-width="4"/>
+  <rect x="235" y="156" width="32" height="138" rx="16" fill="#111827" fill-opacity="0.72" stroke="#F8FAFC" stroke-opacity="0.3">
+    <animate attributeName="height" values="138;122;138" dur="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="156;164;156" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="514" y="156" width="32" height="138" rx="16" fill="#111827" fill-opacity="0.72" stroke="#F8FAFC" stroke-opacity="0.3">
+    <animate attributeName="height" values="138;114;138" dur="1.35s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="156;176;156" dur="1.35s" repeatCount="indefinite"/>
+  </rect>
+  <path d="M96 306C170 254 244 356 318 306" stroke="#38BDF8" stroke-opacity="0.85" stroke-width="5" stroke-linecap="round">
+    <animate attributeName="d" dur="2.8s" repeatCount="indefinite" values="M96 306C170 254 244 356 318 306;M96 306C170 336 244 248 318 306;M96 306C170 254 244 356 318 306"/>
+  </path>
+  <path d="M482 306C556 254 630 356 704 306" stroke="#F472B6" stroke-opacity="0.8" stroke-width="5" stroke-linecap="round">
+    <animate attributeName="d" dur="3.1s" repeatCount="indefinite" values="M482 306C556 254 630 356 704 306;M482 306C556 336 630 248 704 306;M482 306C556 254 630 356 704 306"/>
+  </path>
+</svg>
