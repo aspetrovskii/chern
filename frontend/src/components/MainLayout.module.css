@@ -19,6 +19,8 @@
 .main-area--chat {
   display: flex;
   overflow: hidden;
+  background: transparent;
+  box-shadow: none;
 }
 
 .main-area--chat > * {
