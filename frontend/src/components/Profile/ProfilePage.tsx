@@ -1,6 +1,17 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { Navigate } from "react-router-dom";
-import { getSessionUser } from "../../lib/auth";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { getAccountCreatedAtIso } from "../../lib/accountCreated";
+import { getSessionUser, logoutUser } from "../../lib/auth";
+import {
+  getCachedOrFetchIp,
+  isCurrentDeviceSession,
+  listDeviceSessions,
+  prefetchClientIp,
+  removeDeviceSession,
+  renameDeviceSession,
+  touchDeviceSession,
+} from "../../lib/deviceSessions";
+import { estimateWorldRankByPrompts, estimateWorldRankByTokens } from "../../lib/demoRanks";
 import {
   clearAllActivity,
   getHeatmapColumns,
@@ -8,10 +19,13 @@ import {
   getPromptSeriesLastDays,
   getTokenSeriesLastDays,
 } from "../../lib/profileActivity";
+import { addSpotifyAccount, listSpotifyAccounts, removeSpotifyAccount } from "../../lib/spotifyAccounts";
 import {
   clearStoredAvatar,
   getInitials,
+  getProfileTextFields,
   getStoredAvatarDataUrl,
+  setProfileTextFields,
   setStoredAvatarFromFile,
 } from "../../lib/userProfile";
 import { t, type Locale } from "../../lib/i18n";
@@ -106,18 +120,43 @@ function TokenSpendLine({
 
 export function ProfilePage({ locale }: ProfilePageProps) {
   const session = getSessionUser();
+  const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [, bump] = useState(0);
   const [tab, setTab] = useState<ProfileTab>("overview");
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [dnInput, setDnInput] = useState("");
+  const [bioInput, setBioInput] = useState("");
 
   const refresh = useCallback(() => bump((n) => n + 1), []);
+
+  useEffect(() => {
+    const p = getProfileTextFields();
+    setDnInput(p.displayName);
+    setBioInput(p.bio);
+  }, [tab, bump]);
+
+  useEffect(() => {
+    if (!session) return;
+    prefetchClientIp();
+    let cancelled = false;
+    void getCachedOrFetchIp().then((ip) => {
+      if (!cancelled) touchDeviceSession(session.email, ip);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.email]);
 
   if (!session) {
     return <Navigate to="/auth" replace />;
   }
 
+  const loc = locale === "ru" ? "ru-RU" : locale;
   const avatarUrl = getStoredAvatarDataUrl();
+  const profileText = getProfileTextFields();
   const initials = getInitials(session.login, session.email);
   const stats = getProfileStats();
   const columns = getHeatmapColumns(HEATMAP_WEEKS);
@@ -125,12 +164,29 @@ export function ProfilePage({ locale }: ProfilePageProps) {
   const tokenSeries = getTokenSeriesLastDays(CHART_DAYS);
   const maxPrompts = Math.max(1, ...series.map((s) => s.prompts));
   const maxTokens = Math.max(1, ...tokenSeries.map((s) => s.tokens));
+  const rankPrompts = estimateWorldRankByPrompts(session.email, stats.totalPrompts);
+  const rankTokens = estimateWorldRankByTokens(session.email, stats.totalTokens);
+  const createdIso = getAccountCreatedAtIso(session.email);
+  const deviceSessions = listDeviceSessions(session.email);
+  const spotifyAccounts = listSpotifyAccounts(session.email);
 
   const dateFmt = (iso: string) => {
     try {
       const [y, m, d] = iso.split("-").map(Number);
       const dt = new Date(y, m - 1, d);
-      return dt.toLocaleDateString(locale === "ru" ? "ru-RU" : locale, {
+      return dt.toLocaleDateString(loc, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  };
+
+  const createdFmt = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString(loc, {
         day: "numeric",
         month: "short",
         year: "numeric",
@@ -144,11 +200,13 @@ export function ProfilePage({ locale }: ProfilePageProps) {
     try {
       const [y, m, d] = iso.split("-").map(Number);
       const dt = new Date(y, m - 1, d);
-      return dt.toLocaleDateString(locale === "ru" ? "ru-RU" : locale, { weekday: "narrow" });
+      return dt.toLocaleDateString(loc, { weekday: "narrow" });
     } catch {
       return "";
     }
   };
+
+  const headline = profileText.displayName.trim() || session.login;
 
   const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -181,6 +239,35 @@ export function ProfilePage({ locale }: ProfilePageProps) {
       refresh();
     }
   };
+
+  const onSaveProfileText = () => {
+    setProfileTextFields({ displayName: dnInput, bio: bioInput });
+    refresh();
+  };
+
+  const onStartRenameSession = (id: string, currentName: string) => {
+    setEditingSessionId(id);
+    setRenameDraft(currentName);
+  };
+
+  const onSaveRenameSession = (id: string) => {
+    renameDeviceSession(session.email, id, renameDraft);
+    setEditingSessionId(null);
+    refresh();
+  };
+
+  const onRemoveSession = (id: string) => {
+    if (!window.confirm(t(locale, "profile_session_remove_confirm"))) return;
+    const isCurrent = removeDeviceSession(session.email, id);
+    refresh();
+    if (isCurrent) {
+      logoutUser();
+      navigate("/auth", { replace: true });
+    }
+  };
+
+  const sessionDisplayName = (raw: string) =>
+    raw.trim() ? raw.trim() : t(locale, "profile_session_this_device");
 
   const titleId = "profile-activity-title";
   const chartTitleId = "profile-chart-title";
@@ -229,17 +316,26 @@ export function ProfilePage({ locale }: ProfilePageProps) {
           className={styles["profile-panel"]}
         >
           <div className={styles["profile-overview-meta"]}>
-            <UserAvatar key={avatarUrl ? "1" : "0"} login={session.login} email={session.email} size={36} />
+            <UserAvatar key={avatarUrl ? "1" : "0"} login={session.login} email={session.email} size={40} />
             <div className={styles["profile-overview-meta__text"]}>
-              <span className={styles["profile-overview-meta__login"]}>{session.login}</span>
+              <span className={styles["profile-overview-meta__login"]}>{headline}</span>
               <span className={styles["profile-overview-meta__email"]}>{session.email}</span>
+              {profileText.bio.trim() ? (
+                <p className={styles["profile-overview-meta__bio"]}>{profileText.bio.trim()}</p>
+              ) : null}
             </div>
           </div>
 
-          <div className={styles["profile-stats-grid"]}>
+          <div className={`${styles["profile-stats-grid"]} ${styles["profile-stats-grid--8"]}`}>
             <div className={styles["profile-stat"]}>
               <div className={styles["profile-stat__value"]}>{stats.totalPrompts}</div>
               <div className={styles["profile-stat__label"]}>{t(locale, "profile_stat_prompts")}</div>
+            </div>
+            <div className={styles["profile-stat"]}>
+              <div className={styles["profile-stat__value"]}>
+                #{rankPrompts.toLocaleString(loc)}
+              </div>
+              <div className={styles["profile-stat__label"]}>{t(locale, "profile_stat_rank_prompts")}</div>
             </div>
             <div className={styles["profile-stat"]}>
               <div className={styles["profile-stat__value"]}>{stats.activeDays}</div>
@@ -257,11 +353,22 @@ export function ProfilePage({ locale }: ProfilePageProps) {
             </div>
             <div className={styles["profile-stat"]}>
               <div className={styles["profile-stat__value"]}>
-                {stats.totalTokens.toLocaleString(locale === "ru" ? "ru-RU" : locale)}
+                {stats.totalTokens.toLocaleString(loc)}
               </div>
               <div className={styles["profile-stat__label"]}>{t(locale, "profile_stat_tokens")}</div>
             </div>
+            <div className={styles["profile-stat"]}>
+              <div className={styles["profile-stat__value"]}>#{rankTokens.toLocaleString(loc)}</div>
+              <div className={styles["profile-stat__label"]}>{t(locale, "profile_stat_rank_tokens")}</div>
+            </div>
+            <div className={styles["profile-stat"]}>
+              <div className={styles["profile-stat__value"]}>
+                {createdIso ? createdFmt(createdIso) : t(locale, "profile_stat_since_empty")}
+              </div>
+              <div className={styles["profile-stat__label"]}>{t(locale, "profile_stat_created")}</div>
+            </div>
           </div>
+          <p className={styles["profile-demo-hint"]}>{t(locale, "profile_rank_demo_note")}</p>
 
           <section className={styles["profile-heatmap-full-card"]} aria-labelledby={titleId}>
             <div className={styles["profile-activity__head"]}>
@@ -381,6 +488,37 @@ export function ProfilePage({ locale }: ProfilePageProps) {
             </div>
           </section>
 
+          <section className={styles["profile-card"]} aria-labelledby="profile-display-h">
+            <h2 id="profile-display-h" className={styles["profile-card__title"]}>
+              {t(locale, "profile_display_section")}
+            </h2>
+            <div className={styles["profile-form-stack"]}>
+              <label className={styles["profile-field"]}>
+                <span className={styles["profile-field__label"]}>{t(locale, "profile_display_name_label")}</span>
+                <input
+                  className={styles["profile-input"]}
+                  value={dnInput}
+                  onChange={(e) => setDnInput(e.target.value)}
+                  maxLength={80}
+                  autoComplete="nickname"
+                />
+              </label>
+              <label className={styles["profile-field"]}>
+                <span className={styles["profile-field__label"]}>{t(locale, "profile_bio_label")}</span>
+                <textarea
+                  className={styles["profile-textarea"]}
+                  value={bioInput}
+                  onChange={(e) => setBioInput(e.target.value)}
+                  maxLength={500}
+                  rows={4}
+                />
+              </label>
+              <button type="button" className={styles["profile-btn"]} onClick={onSaveProfileText}>
+                {t(locale, "profile_display_save")}
+              </button>
+            </div>
+          </section>
+
           <section className={styles["profile-card"]} aria-labelledby="profile-settings-avatar-h">
             <h2 id="profile-settings-avatar-h" className={styles["profile-card__title"]}>
               {t(locale, "profile_identity")}
@@ -443,6 +581,137 @@ export function ProfilePage({ locale }: ProfilePageProps) {
                 </div>
               </div>
             </div>
+          </section>
+
+          <section
+            className={`${styles["profile-card"]} ${styles["profile-card--wide"]}`}
+            aria-labelledby="profile-sessions-h"
+          >
+            <h2 id="profile-sessions-h" className={styles["profile-card__title"]}>
+              {t(locale, "profile_sessions_title")}
+            </h2>
+            <p className={styles["profile-settings-hint"]}>{t(locale, "profile_sessions_hint")}</p>
+            <ul className={styles["profile-session-list"]}>
+              {deviceSessions.map((s) => {
+                const current = isCurrentDeviceSession(session.email, s.id);
+                const showName = sessionDisplayName(s.name);
+                return (
+                  <li key={s.id} className={styles["profile-session-row"]}>
+                    <div className={styles["profile-session-row__main"]}>
+                      <div className={styles["profile-session-row__title"]}>
+                        {editingSessionId === s.id ? (
+                          <input
+                            className={styles["profile-input"]}
+                            value={renameDraft}
+                            onChange={(e) => setRenameDraft(e.target.value)}
+                            aria-label={t(locale, "profile_session_rename")}
+                          />
+                        ) : (
+                          <span>{showName}</span>
+                        )}
+                        {current ? (
+                          <span className={styles["profile-session-badge"]}>{t(locale, "profile_session_current")}</span>
+                        ) : null}
+                      </div>
+                      <div className={styles["profile-session-meta"]}>
+                        <span>
+                          {t(locale, "profile_session_device")}: {s.device}
+                        </span>
+                        <span>
+                          {t(locale, "profile_session_ip")}: {s.ip || "—"}
+                        </span>
+                        <span>
+                          {t(locale, "profile_session_last_seen")}:{" "}
+                          {new Date(s.lastSeen).toLocaleString(loc, {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles["profile-session-actions"]}>
+                      {editingSessionId === s.id ? (
+                        <>
+                          <button
+                            type="button"
+                            className={styles["profile-btn"]}
+                            onClick={() => onSaveRenameSession(s.id)}
+                          >
+                            {t(locale, "profile_session_save")}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles["profile-btn"]}
+                            onClick={() => setEditingSessionId(null)}
+                          >
+                            {t(locale, "profile_session_cancel")}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className={styles["profile-btn"]}
+                            onClick={() => onStartRenameSession(s.id, s.name)}
+                          >
+                            {t(locale, "profile_session_rename")}
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles["profile-btn"]} ${styles["profile-btn--danger"]}`}
+                            onClick={() => onRemoveSession(s.id)}
+                          >
+                            {t(locale, "profile_session_remove")}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
+          <section
+            className={`${styles["profile-card"]} ${styles["profile-card--wide"]}`}
+            aria-labelledby="profile-spotify-h"
+          >
+            <h2 id="profile-spotify-h" className={styles["profile-card__title"]}>
+              {t(locale, "profile_spotify_title")}
+            </h2>
+            <p className={styles["profile-settings-hint"]}>{t(locale, "profile_spotify_hint")}</p>
+            <ul className={styles["profile-spotify-list"]}>
+              {spotifyAccounts.map((a) => (
+                <li key={a.id} className={styles["profile-spotify-row"]}>
+                  <span className={styles["profile-spotify-row__label"]}>{a.label}</span>
+                  <span className={styles["profile-spotify-row__date"]}>
+                    {new Date(a.connectedAt).toLocaleDateString(loc)}
+                  </span>
+                  <button
+                    type="button"
+                    className={`${styles["profile-btn"]} ${styles["profile-btn--danger"]}`}
+                    onClick={() => {
+                      removeSpotifyAccount(session.email, a.id);
+                      refresh();
+                    }}
+                  >
+                    {t(locale, "profile_spotify_remove")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className={styles["profile-btn"]}
+              onClick={() => {
+                addSpotifyAccount(session.email);
+                refresh();
+              }}
+            >
+              {t(locale, "profile_spotify_add")}
+            </button>
           </section>
 
           <section className={styles["profile-card"]} aria-labelledby="profile-settings-data-h">

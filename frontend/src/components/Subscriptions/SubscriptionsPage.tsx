@@ -154,8 +154,6 @@ export function SubscriptionsPage({ locale }: SubscriptionsPageProps) {
         </article>
         </div>
       </div>
-
-      <p className={styles["subs-footnote"]}>{t(locale, "subs_footnote")}</p>
     </div>
   );
 }

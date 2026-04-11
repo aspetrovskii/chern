@@ -1,9 +1,43 @@
 const AVATAR_KEY = "conce-user-avatar";
+const PROFILE_TEXT_KEY = "conce-profile-text";
+
+export type ProfileTextFields = { displayName: string; bio: string };
+
+function readProfileText(): ProfileTextFields {
+  try {
+    const raw = localStorage.getItem(PROFILE_TEXT_KEY);
+    if (!raw) return { displayName: "", bio: "" };
+    const p: unknown = JSON.parse(raw);
+    if (!p || typeof p !== "object") return { displayName: "", bio: "" };
+    const o = p as Record<string, unknown>;
+    const displayName = typeof o.displayName === "string" ? o.displayName.slice(0, 80) : "";
+    const bio = typeof o.bio === "string" ? o.bio.slice(0, 500) : "";
+    return { displayName, bio };
+  } catch {
+    return { displayName: "", bio: "" };
+  }
+}
+
+export function getProfileTextFields(): ProfileTextFields {
+  return readProfileText();
+}
+
 /** ~350 KB file → data URL can grow; cap stored string length */
 const MAX_STORED_AVATAR_CHARS = 480_000;
 
 export function notifyProfileUpdated(): void {
   window.dispatchEvent(new Event("conce-profile-updated"));
+}
+
+export function setProfileTextFields(patch: Partial<ProfileTextFields>): void {
+  const cur = readProfileText();
+  const next: ProfileTextFields = {
+    displayName:
+      patch.displayName !== undefined ? patch.displayName.slice(0, 80) : cur.displayName,
+    bio: patch.bio !== undefined ? patch.bio.slice(0, 500) : cur.bio,
+  };
+  localStorage.setItem(PROFILE_TEXT_KEY, JSON.stringify(next));
+  notifyProfileUpdated();
 }
 
 export function getStoredAvatarDataUrl(): string | null {

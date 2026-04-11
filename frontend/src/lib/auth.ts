@@ -1,4 +1,5 @@
 import { apiRequest, clearAccessToken, getAccessToken, getApiV1Prefix } from "./api/http";
+import { ensureAccountCreatedAt, setAccountCreatedAtRegister } from "./accountCreated";
 
 const USERS_KEY = "conce-auth-users";
 const SESSION_KEY = "conce-auth-session";
@@ -126,6 +127,7 @@ export async function registerUser(creds: {
   users.push(user);
   writeUsers(users);
   setSession(user);
+  setAccountCreatedAtRegister(email);
   return { ok: true };
 }
 
@@ -152,6 +154,7 @@ export async function loginUser(creds: {
     return { ok: false, error: "bad_credentials" };
   }
   setSession(found);
+  ensureAccountCreatedAt(found.email);
   return { ok: true };
 }
 
@@ -178,6 +181,7 @@ export async function syncSessionFromApiMe(): Promise<void> {
   const login = me.spotify_user_id || me.email.split("@")[0] || "user";
   const user: StoredUser = { login, email: me.email, passHash: "oauth" };
   setSession(user);
+  ensureAccountCreatedAt(me.email);
 }
 
 export function loginWithSpotify(): { ok: true } {
@@ -187,5 +191,6 @@ export function loginWithSpotify(): { ok: true } {
     passHash: "spotify-oauth",
   };
   setSession(user);
+  ensureAccountCreatedAt(user.email);
   return { ok: true };
 }
