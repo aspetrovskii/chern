@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_TURNSTILE_SITE_KEY?: string;
+  /** Backend origin for API (Docker web → api on another port). Empty = same origin / Vite proxy. */
+  readonly VITE_API_BASE_URL?: string;
 }
 
 interface ImportMeta {

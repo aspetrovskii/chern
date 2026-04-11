@@ -122,10 +122,6 @@
   justify-content: center;
 }
 
-.home-send__icon svg path {
-  stroke: rgba(210, 220, 255, 0.98);
-}
-
 .home-howto {
   padding: 1.35rem 1.25rem;
   margin-top: 0.55rem;

@@ -49,12 +49,12 @@ export type ChatRecord = {
 };
 
 import { t, type Locale } from "./i18n";
-import { fetchPlaylistTrackIds } from "./poolEditorMvp";
+import { getTrackIdsForPlaylist } from "./poolEditorMvp";
 
 const STORAGE_KEY = "conce-mvp-chats-v1";
 const DEFAULT_TARGET_COUNT = 10;
 
-const BASE_TRACKS: Track[] = [
+const TRACK_CATALOG: Track[] = [
   { id: "t001", title: "Neon Drift", artist: "Aurora Echo", uri: "spotify:track:t001", energy: 0.42, valence: 0.62, tempo: 104, tags: ["synthwave", "night", "neon", "chill"] },
   { id: "t002", title: "Steel Horizon", artist: "Pulse Harbor", uri: "spotify:track:t002", energy: 0.86, valence: 0.49, tempo: 146, tags: ["rock", "arena", "drive", "guitar"] },
   { id: "t003", title: "Low Tide Lights", artist: "Mellow Unit", uri: "spotify:track:t003", energy: 0.33, valence: 0.54, tempo: 92, tags: ["lofi", "study", "focus", "calm"] },
@@ -71,83 +71,6 @@ const BASE_TRACKS: Track[] = [
   { id: "t014", title: "Basement Sun", artist: "Kite Parade", uri: "spotify:track:t014", energy: 0.64, valence: 0.7, tempo: 118, tags: ["indie", "warm", "roadtrip", "guitar"] },
   { id: "t015", title: "Grey Hours", artist: "Monochrome Club", uri: "spotify:track:t015", energy: 0.4, valence: 0.28, tempo: 96, tags: ["melancholy", "rainy", "post-punk", "night"] },
 ];
-
-const TITLE_A = [
-  "Neon",
-  "Silver",
-  "Velvet",
-  "Crystal",
-  "Paper",
-  "Ghost",
-  "Midnight",
-  "Solar",
-  "Parallel",
-  "Northern",
-];
-const TITLE_B = [
-  "Drift",
-  "Signal",
-  "Circuit",
-  "Harbor",
-  "Echo",
-  "Frame",
-  "Atlas",
-  "Bloom",
-  "Ritual",
-  "Transit",
-];
-const MOCK_ARTISTS = [
-  "Aurora Echo",
-  "Pulse Harbor",
-  "Mellow Unit",
-  "Kite Parade",
-  "Razor District",
-  "Monochrome Club",
-  "Pixel Garden",
-  "Harbor Kids",
-  "Cinder Bloom",
-  "Mina Vale",
-];
-const MOCK_TAG_SETS = [
-  ["indie", "guitar", "warm"],
-  ["electronic", "night", "pulse"],
-  ["lofi", "focus", "calm"],
-  ["rock", "drive", "arena"],
-  ["pop", "bright", "dance"],
-  ["ambient", "cinematic", "soft"],
-  ["synthwave", "neon", "retro"],
-  ["metal", "heavy", "live"],
-  ["folk", "acoustic", "quiet"],
-  ["house", "festival", "uplift"],
-];
-
-function det01(n: number, salt: number): number {
-  const x = Math.sin(n * 12.9898 + salt * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-function synthTrack(index: number): Track {
-  const id = `t${String(index).padStart(3, "0")}`;
-  const a = TITLE_A[Math.floor(det01(index, 1) * TITLE_A.length)] ?? "Neon";
-  const b = TITLE_B[Math.floor(det01(index, 2) * TITLE_B.length)] ?? "Drift";
-  const artist = MOCK_ARTISTS[Math.floor(det01(index, 3) * MOCK_ARTISTS.length)] ?? "Aurora Echo";
-  const energy = 0.22 + det01(index, 4) * 0.72;
-  const valence = 0.2 + det01(index, 5) * 0.75;
-  const tempo = Math.round(72 + det01(index, 6) * 104);
-  const tagPick = MOCK_TAG_SETS[Math.floor(det01(index, 7) * MOCK_TAG_SETS.length)] ?? ["indie", "demo"];
-  return {
-    id,
-    title: `${a} ${b} (${index})`,
-    artist,
-    uri: `spotify:track:${id}`,
-    energy,
-    valence,
-    tempo,
-    tags: [...tagPick],
-  };
-}
-
-const TRACK_CATALOG: Track[] = [...BASE_TRACKS, ...Array.from({ length: 85 }, (_, i) => synthTrack(i + 16))];
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -329,13 +252,13 @@ export function removePoolTrack(chatId: string, trackId: string): ChatRecord | n
   return next;
 }
 
-export async function loadPoolFromSourcePlaylist(chatId: string): Promise<ChatRecord | null> {
+export function loadPoolFromSourcePlaylist(chatId: string): ChatRecord | null {
   const chats = listChats();
   const idx = chats.findIndex((c) => c.id === chatId);
   if (idx < 0) return null;
   const chat = chats[idx];
   if (!chat.sourceSpotifyPlaylistId) return null;
-  const ids = await fetchPlaylistTrackIds(chat.sourceSpotifyPlaylistId);
+  const ids = getTrackIdsForPlaylist(chat.sourceSpotifyPlaylistId);
   if (ids.length === 0) return null;
   return replacePoolTracks(chatId, ids);
 }

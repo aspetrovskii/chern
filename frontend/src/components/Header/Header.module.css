@@ -25,6 +25,18 @@
   gap: 0.5rem;
 }
 
+.dev-providers-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgba(160, 195, 255, 0.88);
+  opacity: 0.85;
+  white-space: nowrap;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 a.nav-btn:link,
 a.nav-btn:visited {
   color: inherit;
@@ -116,38 +128,15 @@ button.nav-btn {
   position: relative;
 }
 
-.lang-dropdown--open {
-  z-index: 80;
-}
-
-/* Full-width panel (e.g. chat pool pickers) — same glass style as language menu */
-.lang-dropdown--block {
-  width: 100%;
-}
-
-.lang-dropdown--block .lang-dropdown__panel {
-  left: 0;
-  right: 0;
-  min-width: 0;
-}
-
-.nav-btn--pool {
-  width: 100%;
-  max-width: none;
-  justify-content: space-between;
-  padding-inline: 0.55rem 0.45rem;
-}
-
 .lang-dropdown__panel {
   position: absolute;
   right: 0;
   top: calc(100% + 0.45rem);
-  z-index: 1;
   min-width: 11rem;
   padding: 0.25rem;
   border-radius: 12px;
   border: 1px solid var(--glass-border);
-  background: rgba(16, 18, 26, 0.94);
+  background: rgba(16, 18, 26, 0.72);
   backdrop-filter: blur(20px) saturate(1.15);
   -webkit-backdrop-filter: blur(20px) saturate(1.15);
   box-shadow: var(--glass-inset), 0 16px 48px rgba(0, 0, 0, 0.45);

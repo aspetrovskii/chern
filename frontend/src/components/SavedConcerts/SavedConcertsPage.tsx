@@ -17,10 +17,14 @@ type SavedConcertsPageProps = {
 
 export function SavedConcertsPage({ locale }: SavedConcertsPageProps) {
   const navigate = useNavigate();
-  const [items, setItems] = useState<SavedConcertItem[]>(() => loadSavedConcertsFromStorage());
+  const [items, setItems] = useState<SavedConcertItem[]>([]);
   const [search, setSearch] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
+
+  useEffect(() => {
+    setItems(loadSavedConcertsFromStorage());
+  }, []);
 
   useEffect(() => {
     persistSavedConcerts(items);
@@ -53,7 +57,9 @@ export function SavedConcertsPage({ locale }: SavedConcertsPageProps) {
   return (
     <div className={helpStyles["help-page"]}>
       <h1 className={layoutStyles["page-title"]}>{t(locale, "nav_saved_concerts")}</h1>
-      <p className={helpStyles["help-page__intro"]}>{t(locale, "saved_dblclick")}</p>
+      <p className={helpStyles["help-page__intro"]}>
+        {t(locale, "saved_dblclick")} · {t(locale, "saved_open_chat")}
+      </p>
 
       <div
         className={`${neoStyles["neo-surface"]} ${helpStyles["help-page__form-block"]}`}

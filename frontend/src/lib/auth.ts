@@ -1,3 +1,5 @@
+import { apiRequest, clearAccessToken, getAccessToken, getApiV1Prefix } from "./api/http";
+
 const USERS_KEY = "conce-auth-users";
 const SESSION_KEY = "conce-auth-session";
 
@@ -155,6 +157,27 @@ export async function loginUser(creds: {
 
 export function logoutUser(): void {
   clearSession();
+  clearAccessToken();
+  void apiRequest("/auth/logout", { method: "POST" }).catch(() => undefined);
+}
+
+/** Редирект на Spotify OAuth (ответ приходит на backend GET /auth/spotify/callback → редирект в SPA). */
+export async function startSpotifyOAuthRedirect(): Promise<void> {
+  const r = await fetch(`${getApiV1Prefix()}/auth/spotify/login`);
+  if (!r.ok) {
+    throw new Error("spotify_login_url_failed");
+  }
+  const data = (await r.json()) as { auth_url: string };
+  window.location.assign(data.auth_url);
+}
+
+export async function syncSessionFromApiMe(): Promise<void> {
+  const token = getAccessToken();
+  if (!token) return;
+  const me = await apiRequest<{ email: string; spotify_user_id: string }>("/me");
+  const login = me.spotify_user_id || me.email.split("@")[0] || "user";
+  const user: StoredUser = { login, email: me.email, passHash: "oauth" };
+  setSession(user);
 }
 
 export function loginWithSpotify(): { ok: true } {

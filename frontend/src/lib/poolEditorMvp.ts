@@ -1,8 +1,8 @@
 /**
- * Пул: альбомы/артисты — локальный мок; плейлисты Spotify — GET /api/v1/spotify/* (mockApi) + fallback mockBackendData.
+ * Mock Spotify catalogue for the pool editor (DEV).
+ * Mirrors backend contract shapes conceptually; no real Spotify calls.
+ * Track ids must match `TRACK_CATALOG` in concertMvp.
  */
-
-import { findMockPlaylistDef, MOCK_PLAYLIST_DEFINITIONS } from "./mockBackendData";
 
 export type MockSpotifyPlaylist = {
   id: string;
@@ -10,8 +10,6 @@ export type MockSpotifyPlaylist = {
   description?: string;
   trackIds: string[];
 };
-
-const API_V1 = "/api/v1";
 
 export type MockAlbum = {
   id: string;
@@ -25,6 +23,30 @@ export type MockArtist = {
   name: string;
   trackIds: string[];
 };
+
+const PLAYLISTS: MockSpotifyPlaylist[] = [
+  {
+    id: "pl_night_drive",
+    name: "Night Drive — synth & pulse",
+    description: "Neon synths and steady night energy",
+    trackIds: ["t001", "t008", "t013", "t003", "t010"],
+  },
+  {
+    id: "pl_rock_live",
+    name: "Arena rock & live energy",
+    trackIds: ["t002", "t006", "t011", "t004", "t014"],
+  },
+  {
+    id: "pl_chill_focus",
+    name: "Chill focus pool",
+    trackIds: ["t003", "t005", "t012", "t010", "t015"],
+  },
+  {
+    id: "pl_festival",
+    name: "Festival floor",
+    trackIds: ["t007", "t009", "t004", "t013", "t002"],
+  },
+];
 
 const ALBUMS: MockAlbum[] = [
   {
@@ -54,75 +76,17 @@ const ARTISTS: MockArtist[] = [
   { id: "ar_kite", name: "Kite Parade", trackIds: ["t004", "t014"] },
 ];
 
-function defsToPlaylists(): MockSpotifyPlaylist[] {
-  return MOCK_PLAYLIST_DEFINITIONS.map((p) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    trackIds: [...p.trackIds],
-  }));
-}
-
-/** Синхронный список (fallback / SSR без fetch) */
 export function listMockPlaylists(): MockSpotifyPlaylist[] {
-  return defsToPlaylists();
-}
-
-export async function fetchPlaylistSummaries(): Promise<{ id: string; name: string }[]> {
-  try {
-    const res = await fetch(`${API_V1}/spotify/playlists`);
-    if (!res.ok) throw new Error(String(res.status));
-    const data = (await res.json()) as { items?: { id: string; name: string }[] };
-    const items = data.items;
-    if (!Array.isArray(items)) throw new Error("bad_shape");
-    return items.map((x) => ({ id: x.id, name: x.name }));
-  } catch {
-    return defsToPlaylists().map((p) => ({ id: p.id, name: p.name }));
-  }
-}
-
-type SpotifyTracksJson = {
-  items?: { track?: { id?: string } | null }[] | null;
-};
-
-export async function fetchPlaylistTrackIds(playlistId: string): Promise<string[]> {
-  const trimmed = playlistId.trim();
-  if (!trimmed) return [];
-
-  try {
-    const res = await fetch(`${API_V1}/spotify/playlists/${encodeURIComponent(trimmed)}/tracks`);
-    if (res.ok) {
-      const data = (await res.json()) as SpotifyTracksJson;
-      const items = data.items;
-      if (Array.isArray(items)) {
-        const ids = items
-          .map((row) => (row.track && typeof row.track.id === "string" ? row.track.id : null))
-          .filter((x): x is string => Boolean(x));
-        if (ids.length > 0) return ids;
-      }
-    }
-  } catch {
-    /* fallback below */
-  }
-
-  const local = findMockPlaylistDef(trimmed);
-  return local ? [...local.trackIds] : [];
+  return [...PLAYLISTS];
 }
 
 export function findMockPlaylist(id: string): MockSpotifyPlaylist | null {
-  const def = findMockPlaylistDef(id);
-  if (!def) return null;
-  return {
-    id: def.id,
-    name: def.name,
-    description: def.description,
-    trackIds: [...def.trackIds],
-  };
+  return PLAYLISTS.find((p) => p.id === id) ?? null;
 }
 
-/** Синхронно только локальный каталог; для полного списка с бэкенда — fetchPlaylistTrackIds. */
 export function getTrackIdsForPlaylist(playlistId: string): string[] {
-  return findMockPlaylistDef(playlistId.trim())?.trackIds ?? [];
+  const pl = findMockPlaylist(playlistId);
+  return pl ? [...pl.trackIds] : [];
 }
 
 export function getTrackIdsForAlbum(albumId: string): string[] {
