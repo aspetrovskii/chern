@@ -18,7 +18,7 @@ import { UserAvatar } from "../Header/UserAvatar";
 import layoutStyles from "../MainLayout.module.css";
 import styles from "./ProfilePage.module.css";
 
-const HEATMAP_WEEKS = 16;
+const HEATMAP_WEEKS = 42;
 const CHART_DAYS = 14;
 
 const HEAT_LEVEL_CLASS: Record<0 | 1 | 2 | 3 | 4, string> = {
@@ -223,23 +223,29 @@ export function ProfilePage({ locale }: ProfilePageProps) {
               </div>
               <p className={styles["profile-activity__sub"]}>{t(locale, "profile_activity_subtitle")}</p>
               <div className={styles["profile-heatmap-wrap"]}>
-                <div className={styles["profile-heatmap"]} role="img" aria-label={t(locale, "profile_activity_title")}>
-                  {columns.map((col, ci) => (
-                    <div key={ci} className={styles["profile-heatmap__col"]}>
-                      {col.map((cell) => {
-                        const cls = cell.future
-                          ? styles["profile-heatmap__cell--future"]
-                          : HEAT_LEVEL_CLASS[cell.level];
-                        return (
-                          <div
-                            key={cell.date}
-                            className={`${styles["profile-heatmap__cell"]} ${cls}`}
-                            title={cell.future ? "" : cell.date}
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
+                <div
+                  className={styles["profile-heatmap-grid"]}
+                  style={{
+                    gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
+                  }}
+                  role="img"
+                  aria-label={t(locale, "profile_activity_title")}
+                >
+                  {[0, 1, 2, 3, 4, 5, 6].flatMap((day) =>
+                    columns.map((col) => {
+                      const cell = col[day];
+                      const cls = cell.future
+                        ? styles["profile-heatmap__cell--future"]
+                        : HEAT_LEVEL_CLASS[cell.level];
+                      return (
+                        <div
+                          key={cell.date}
+                          className={`${styles["profile-heatmap__cell"]} ${cls}`}
+                          title={cell.future ? "" : cell.date}
+                        />
+                      );
+                    })
+                  )}
                 </div>
               </div>
               <div className={styles["profile-heatmap__legend"]}>
@@ -248,7 +254,7 @@ export function ProfilePage({ locale }: ProfilePageProps) {
                   {([0, 1, 2, 3, 4] as const).map((level) => (
                     <div
                       key={level}
-                      className={`${styles["profile-heatmap__cell"]} ${HEAT_LEVEL_CLASS[level]}`}
+                      className={`${styles["profile-heatmap__legend-cell"]} ${HEAT_LEVEL_CLASS[level]}`}
                     />
                   ))}
                 </div>
