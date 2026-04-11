@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { getLocale, setLocale, subscribeLocale } from "./lib/i18n";
 import { installMockFetchInterceptor } from "./lib/mockApi";
-import { InteractiveBackdrop } from "./components/InteractiveBackdrop";
+import { GridLoupeLayer } from "./components/GridLoupeLayer";
 import { Header } from "./components/Header/Header";
 import { HomePage } from "./components/Home/HomePage";
 import { HelpPage } from "./components/Help/HelpPage";
 import { AuthPage } from "./components/Auth/AuthPage";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { SavedConcertsPage } from "./components/SavedConcerts/SavedConcertsPage";
+import { SubscriptionsPage } from "./components/Subscriptions/SubscriptionsPage";
 import { NowPlaying } from "./components/Home/NowPlaying";
 import layoutStyles from "./components/MainLayout.module.css";
 
@@ -43,6 +44,7 @@ function AppRoutes() {
   const path = location.pathname;
   const isAuth = path === "/auth";
   const isChat = path === "/chat";
+  const isHome = path === "/";
 
   useEffect(() => {
     const cls = "route-chat";
@@ -53,6 +55,11 @@ function AppRoutes() {
     document.body.classList.remove(cls);
     return undefined;
   }, [isChat]);
+
+  useEffect(() => {
+    document.body.classList.toggle("route-home", isHome);
+    return () => document.body.classList.remove("route-home");
+  }, [isHome]);
 
   const mainClass = [
     layoutStyles["main-area"],
@@ -68,21 +75,24 @@ function AppRoutes() {
 
   return (
     <>
-      <InteractiveBackdrop />
       <Header locale={locale} onAuthChange={() => bumpHeader((n) => n + 1)} />
       <main className={mainClass}>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <HomePage locale={locale} />
-            }
-          />
-          <Route path="/chat" element={<ChatPage locale={locale} />} />
-          <Route path="/saved-concerts" element={<SavedConcertsPage locale={locale} />} />
-          <Route path="/help" element={<HelpPage locale={locale} />} />
-          <Route path="/auth" element={<AuthPage locale={locale} />} />
-        </Routes>
+        <GridLoupeLayer />
+        <div className={layoutStyles["main-area__stack"]}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <HomePage locale={locale} />
+              }
+            />
+            <Route path="/chat" element={<ChatPage locale={locale} />} />
+            <Route path="/saved-concerts" element={<SavedConcertsPage locale={locale} />} />
+            <Route path="/subscriptions" element={<SubscriptionsPage locale={locale} />} />
+            <Route path="/help" element={<HelpPage locale={locale} />} />
+            <Route path="/auth" element={<AuthPage locale={locale} />} />
+          </Routes>
+        </div>
       </main>
       <NowPlaying locale={locale} onCollapsedChange={setPlayerCollapsed} />
     </>

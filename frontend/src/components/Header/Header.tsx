@@ -124,6 +124,7 @@ type HeaderProps = {
 export function Header({ locale, onAuthChange }: HeaderProps) {
   const location = useLocation();
   const onChatRoute = location.pathname === "/chat";
+  const onSubscriptionsRoute = location.pathname === "/subscriptions";
   const session = getSessionUser();
 
   useEffect(() => {
@@ -179,6 +180,17 @@ export function Header({ locale, onAuthChange }: HeaderProps) {
         </a>
         <a className={headerStyles["nav-btn"]} href="#/saved-concerts">
           <span className={headerStyles["nav-text"]}>{t(locale, "nav_saved_concerts")}</span>
+        </a>
+        <a
+          className={[
+            headerStyles["nav-btn"],
+            onSubscriptionsRoute ? headerStyles["nav-btn--active"] : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          href="#/subscriptions"
+        >
+          <span className={headerStyles["nav-text"]}>{t(locale, "nav_subscriptions")}</span>
         </a>
         <a className={headerStyles["nav-btn"]} href="#/help">
           <span className={headerStyles["nav-text"]}>{t(locale, "nav_help")}</span>
