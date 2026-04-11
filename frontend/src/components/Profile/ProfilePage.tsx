@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getSessionUser } from "../../lib/auth";
 import {
@@ -6,6 +6,7 @@ import {
   getHeatmapColumns,
   getProfileStats,
   getPromptSeriesLastDays,
+  getTokenSeriesLastDays,
 } from "../../lib/profileActivity";
 import {
   clearStoredAvatar,
@@ -35,6 +36,74 @@ type ProfilePageProps = {
   locale: Locale;
 };
 
+function formatCompactTokens(n: number): string {
+  const v = Math.round(n);
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (v >= 10_000) return `${Math.round(v / 1_000)}k`;
+  if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
+  return String(v);
+}
+
+function TokenSpendLine({
+  series,
+  maxVal,
+}: {
+  series: { date: string; tokens: number }[];
+  maxVal: number;
+}) {
+  const vb = { w: 400, h: 100, padX: 4, padY: 6 };
+  const innerW = vb.w - 2 * vb.padX;
+  const innerH = vb.h - 2 * vb.padY;
+  const max = Math.max(1, maxVal);
+  const n = series.length;
+
+  const pts = useMemo(() => {
+    return series.map((s, i) => {
+      const x = vb.padX + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+      const y = vb.padY + innerH - (s.tokens / max) * innerH;
+      return { x, y, date: s.date, tokens: s.tokens };
+    });
+  }, [series, n, max, innerW, innerH, vb.padX, vb.padY]);
+
+  const lineD =
+    n === 0
+      ? ""
+      : n === 1
+        ? `M ${vb.padX} ${pts[0].y.toFixed(1)} L ${(vb.padX + innerW).toFixed(1)} ${pts[0].y.toFixed(1)}`
+        : pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+
+  const yBase = vb.padY + innerH;
+  const areaD =
+    n === 0
+      ? ""
+      : n === 1
+        ? `M ${vb.padX} ${yBase.toFixed(1)} L ${(vb.padX + innerW).toFixed(1)} ${yBase.toFixed(1)} L ${(vb.padX + innerW).toFixed(1)} ${pts[0].y.toFixed(1)} L ${vb.padX} ${pts[0].y.toFixed(1)} Z`
+        : `M ${pts[0].x.toFixed(1)} ${yBase.toFixed(1)} ` +
+          pts.map((p) => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") +
+          ` L ${pts[pts.length - 1].x.toFixed(1)} ${yBase.toFixed(1)} Z`;
+
+  if (n === 0) return null;
+
+  return (
+    <svg
+      className={styles["token-chart__svg"]}
+      viewBox={`0 0 ${vb.w} ${vb.h}`}
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <path d={areaD} className={styles["token-chart__area"]} />
+      <path
+        d={lineD}
+        fill="none"
+        className={styles["token-chart__line"]}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function ProfilePage({ locale }: ProfilePageProps) {
   const session = getSessionUser();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -53,7 +122,9 @@ export function ProfilePage({ locale }: ProfilePageProps) {
   const stats = getProfileStats();
   const columns = getHeatmapColumns(HEATMAP_WEEKS);
   const series = getPromptSeriesLastDays(CHART_DAYS);
+  const tokenSeries = getTokenSeriesLastDays(CHART_DAYS);
   const maxPrompts = Math.max(1, ...series.map((s) => s.prompts));
+  const maxTokens = Math.max(1, ...tokenSeries.map((s) => s.tokens));
 
   const dateFmt = (iso: string) => {
     try {
@@ -113,6 +184,7 @@ export function ProfilePage({ locale }: ProfilePageProps) {
 
   const titleId = "profile-activity-title";
   const chartTitleId = "profile-chart-title";
+  const tokensTitleId = "profile-tokens-title";
 
   return (
     <div className={styles["profile-page"]}>
@@ -183,7 +255,57 @@ export function ProfilePage({ locale }: ProfilePageProps) {
               </div>
               <div className={styles["profile-stat__label"]}>{t(locale, "profile_stat_since")}</div>
             </div>
+            <div className={styles["profile-stat"]}>
+              <div className={styles["profile-stat__value"]}>
+                {stats.totalTokens.toLocaleString(locale === "ru" ? "ru-RU" : locale)}
+              </div>
+              <div className={styles["profile-stat__label"]}>{t(locale, "profile_stat_tokens")}</div>
+            </div>
           </div>
+
+          <section className={styles["profile-heatmap-full-card"]} aria-labelledby={titleId}>
+            <div className={styles["profile-activity__head"]}>
+              <h2 id={titleId} className={styles["profile-card__title"]}>
+                {t(locale, "profile_activity_title")}
+              </h2>
+            </div>
+            <p className={styles["profile-activity__sub"]}>{t(locale, "profile_activity_subtitle")}</p>
+            <div className={styles["profile-heatmap-full-wrap"]}>
+              <div
+                className={`${styles["profile-heatmap-grid"]} ${styles["profile-heatmap-grid--fixed"]}`}
+                role="img"
+                aria-label={t(locale, "profile_activity_title")}
+              >
+                {columns.flatMap((col) =>
+                  [0, 1, 2, 3, 4, 5, 6].map((day) => {
+                    const cell = col[day];
+                    const cls = cell.future
+                      ? styles["profile-heatmap__cell--future"]
+                      : HEAT_LEVEL_CLASS[cell.level];
+                    return (
+                      <div
+                        key={cell.date}
+                        className={`${styles["profile-heatmap__cell"]} ${styles["profile-heatmap__cell--fixed"]} ${cls}`}
+                        title={cell.future ? "" : cell.date}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            </div>
+            <div className={styles["profile-heatmap__legend"]}>
+              <span>{t(locale, "profile_activity_less")}</span>
+              <div className={styles["profile-heatmap__legend-scale"]} aria-hidden>
+                {([0, 1, 2, 3, 4] as const).map((level) => (
+                  <div
+                    key={level}
+                    className={`${styles["profile-heatmap__legend-cell"]} ${HEAT_LEVEL_CLASS[level]}`}
+                  />
+                ))}
+              </div>
+              <span>{t(locale, "profile_activity_more")}</span>
+            </div>
+          </section>
 
           <div className={styles["profile-activity-split"]}>
             <section className={styles["profile-chart-card"]} aria-labelledby={chartTitleId}>
@@ -215,50 +337,29 @@ export function ProfilePage({ locale }: ProfilePageProps) {
               </div>
             </section>
 
-            <section className={styles["profile-heatmap-card"]} aria-labelledby={titleId}>
-              <div className={styles["profile-activity__head"]}>
-                <h2 id={titleId} className={styles["profile-card__title"]}>
-                  {t(locale, "profile_activity_title")}
-                </h2>
-              </div>
-              <p className={styles["profile-activity__sub"]}>{t(locale, "profile_activity_subtitle")}</p>
-              <div className={styles["profile-heatmap-wrap"]}>
-                <div
-                  className={styles["profile-heatmap-grid"]}
-                  style={{
-                    gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
-                  }}
-                  role="img"
-                  aria-label={t(locale, "profile_activity_title")}
-                >
-                  {[0, 1, 2, 3, 4, 5, 6].flatMap((day) =>
-                    columns.map((col) => {
-                      const cell = col[day];
-                      const cls = cell.future
-                        ? styles["profile-heatmap__cell--future"]
-                        : HEAT_LEVEL_CLASS[cell.level];
-                      return (
-                        <div
-                          key={cell.date}
-                          className={`${styles["profile-heatmap__cell"]} ${cls}`}
-                          title={cell.future ? "" : cell.date}
-                        />
-                      );
-                    })
-                  )}
+            <section className={styles["profile-token-card"]} aria-labelledby={tokensTitleId}>
+              <h2 id={tokensTitleId} className={styles["profile-card__title"]}>
+                {t(locale, "profile_tokens_title")}
+              </h2>
+              <p className={styles["profile-token-card__sub"]}>{t(locale, "profile_tokens_subtitle")}</p>
+              <div className={styles["token-chart"]} role="img" aria-label={t(locale, "profile_tokens_title")}>
+                <div className={styles["token-chart__y"]} aria-hidden>
+                  <span>{formatCompactTokens(maxTokens)}</span>
+                  {maxTokens > 1 ? <span>{formatCompactTokens(maxTokens / 2)}</span> : null}
+                  <span>0</span>
                 </div>
-              </div>
-              <div className={styles["profile-heatmap__legend"]}>
-                <span>{t(locale, "profile_activity_less")}</span>
-                <div className={styles["profile-heatmap__legend-scale"]} aria-hidden>
-                  {([0, 1, 2, 3, 4] as const).map((level) => (
-                    <div
-                      key={level}
-                      className={`${styles["profile-heatmap__legend-cell"]} ${HEAT_LEVEL_CLASS[level]}`}
-                    />
-                  ))}
+                <div className={styles["token-chart__plot"]}>
+                  <div className={styles["token-chart__svg-wrap"]}>
+                    <TokenSpendLine series={tokenSeries} maxVal={maxTokens} />
+                  </div>
+                  <div className={styles["token-chart__ticks"]}>
+                    {tokenSeries.map((s) => (
+                      <span key={s.date} className={styles["token-chart__tick"]} title={`${s.date}: ${s.tokens}`}>
+                        {dayLabel(s.date)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <span>{t(locale, "profile_activity_more")}</span>
               </div>
             </section>
           </div>

@@ -198,6 +198,9 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     profile_settings_clear_confirm:
       "Clear all locally stored activity (heatmap, charts, counters)? This cannot be undone.",
     profile_chart_title: "Prompts (last 14 days)",
+    profile_tokens_title: "Estimated tokens (last 14 days)",
+    profile_tokens_subtitle: "Local estimate from prompts in this browser, not API billing.",
+    profile_stat_tokens: "Est. tokens total",
   },
   ru: {
     brand: "Conce Music AI",
@@ -394,6 +397,9 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     profile_settings_clear_confirm:
       "Очистить всю локально сохранённую активность (графики, счётчики)? Это необратимо.",
     profile_chart_title: "Запросы (последние 14 дней)",
+    profile_tokens_title: "Токены (последние 14 дней, оценка)",
+    profile_tokens_subtitle: "Локальная оценка по запросам в этом браузере, не списание API.",
+    profile_stat_tokens: "Токены всего (оценка)",
   },
   tr: {
     brand: "Conce Music AI",

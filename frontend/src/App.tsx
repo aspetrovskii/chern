@@ -46,7 +46,7 @@ function AppRoutes() {
   const isAuth = path === "/auth";
   const isChat = path === "/chat";
   const isHome = path === "/";
-  const isFitViewport = path === "/profile" || path === "/subscriptions";
+  const isFitViewport = path === "/subscriptions";
 
   useEffect(() => {
     const cls = "route-chat";

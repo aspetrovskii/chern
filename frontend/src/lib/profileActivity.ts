@@ -1,6 +1,9 @@
 const KEY = "conce-activity-by-day";
 
-export type DayActivity = { p: number; v: number };
+/** Rough local estimate per user message (no backend). */
+const ESTIMATED_TOKENS_PER_PROMPT = 1180;
+
+export type DayActivity = { p: number; v: number; tok: number };
 
 function read(): Record<string, DayActivity> {
   try {
@@ -12,10 +15,12 @@ function read(): Record<string, DayActivity> {
     for (const [k, val] of Object.entries(parsed as Record<string, unknown>)) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
       if (val && typeof val === "object" && "p" in val && "v" in val) {
-        const o = val as { p: unknown; v: unknown };
+        const o = val as { p: unknown; v: unknown; tok?: unknown };
         const p = typeof o.p === "number" && o.p >= 0 ? Math.min(o.p, 999) : 0;
         const v = typeof o.v === "number" && o.v >= 0 ? Math.min(o.v, 99) : 0;
-        out[k] = { p, v };
+        const tokRaw = typeof o.tok === "number" && o.tok >= 0 ? o.tok : p * ESTIMATED_TOKENS_PER_PROMPT;
+        const tok = Math.min(Math.round(tokRaw), 9_999_999);
+        out[k] = { p, v, tok };
       }
     }
     return out;
@@ -42,8 +47,9 @@ function todayKey(): string {
 export function recordChatPromptSent(): void {
   const t = todayKey();
   const d = read();
-  const cur = d[t] ?? { p: 0, v: 0 };
+  const cur = d[t] ?? { p: 0, v: 0, tok: 0 };
   cur.p += 1;
+  cur.tok = (cur.tok ?? 0) + ESTIMATED_TOKENS_PER_PROMPT;
   d[t] = cur;
   write(d);
   window.dispatchEvent(new Event("conce-profile-updated"));
@@ -53,7 +59,7 @@ export function recordChatPromptSent(): void {
 export function recordChatVisit(): void {
   const t = todayKey();
   const d = read();
-  const cur = d[t] ?? { p: 0, v: 0 };
+  const cur = d[t] ?? { p: 0, v: 0, tok: 0 };
   cur.v = Math.min(cur.v + 1, 20);
   d[t] = cur;
   write(d);
@@ -103,15 +109,18 @@ export function getHeatmapColumns(weeks: number): HeatmapCell[][] {
 
 export function getProfileStats(): {
   totalPrompts: number;
+  totalTokens: number;
   activeDays: number;
   streak: number;
   firstActiveDate: string | null;
 } {
   const d = read();
   let totalPrompts = 0;
+  let totalTokens = 0;
   let activeDays = 0;
   for (const v of Object.values(d)) {
     totalPrompts += v.p;
+    totalTokens += v.tok ?? v.p * ESTIMATED_TOKENS_PER_PROMPT;
     if (v.p > 0 || v.v > 0) activeDays += 1;
   }
 
@@ -137,6 +146,7 @@ export function getProfileStats(): {
     .sort();
   return {
     totalPrompts,
+    totalTokens,
     activeDays,
     streak,
     firstActiveDate: sortedKeys[0] ?? null,
@@ -154,6 +164,22 @@ export function getPromptSeriesLastDays(days: number): { date: string; prompts: 
     d.setDate(d.getDate() - i);
     const key = toLocalISODate(d);
     out.push({ date: key, prompts: byDay[key]?.p ?? 0 });
+  }
+  return out;
+}
+
+export function getTokenSeriesLastDays(days: number): { date: string; tokens: number }[] {
+  const byDay = read();
+  const out: { date: string; tokens: number }[] = [];
+  const end = new Date();
+  end.setHours(0, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(end);
+    d.setDate(d.getDate() - i);
+    const key = toLocalISODate(d);
+    const rec = byDay[key];
+    const tokens = rec ? (rec.tok ?? rec.p * ESTIMATED_TOKENS_PER_PROMPT) : 0;
+    out.push({ date: key, tokens: Math.round(tokens) });
   }
   return out;
 }
