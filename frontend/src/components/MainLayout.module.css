@@ -69,8 +69,10 @@
   overflow: hidden;
 }
 
+/* Fit routes: no document scroll, but route content may scroll inside (scrollbars hidden globally) */
 .main-area--fit-viewport .main-area__stack > * {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   min-height: 0;
 }
 

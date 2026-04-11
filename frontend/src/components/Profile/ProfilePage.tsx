@@ -193,7 +193,7 @@ export function ProfilePage({ locale }: ProfilePageProps) {
               <div className={styles["profile-chart"]} role="img" aria-label={t(locale, "profile_chart_title")}>
                 <div className={styles["profile-chart__y"]} aria-hidden>
                   <span>{maxPrompts}</span>
-                  <span>{Math.ceil(maxPrompts / 2)}</span>
+                  {maxPrompts > 1 ? <span>{Math.round(maxPrompts / 2)}</span> : null}
                   <span>0</span>
                 </div>
                 <div className={styles["profile-chart__plot"]}>
