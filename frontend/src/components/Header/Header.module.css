@@ -59,6 +59,93 @@ a.nav-btn:visited {
   background: var(--ide-surface-raised);
 }
 
+/* “Chat with AI” — highlighted CTA with living light */
+.nav-btn--ai {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(236, 72, 153, 0.14));
+  color: #f5f0ff;
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow:
+    0 0 18px rgba(236, 72, 153, 0.22),
+    0 0 36px rgba(139, 92, 246, 0.12);
+  animation: nav-ai-pulse 2.6s ease-in-out infinite;
+}
+
+.nav-btn--ai::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  animation: nav-ai-shimmer 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.nav-btn--ai:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.32), rgba(236, 72, 153, 0.22));
+  color: #fff;
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.nav-btn--ai .nav-text {
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+  text-shadow: 0 0 14px rgba(167, 139, 250, 0.45);
+}
+
+.nav-btn--ai-active {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow:
+    0 0 22px rgba(56, 189, 248, 0.28),
+    0 0 44px rgba(236, 72, 153, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  animation: nav-ai-pulse-active 2.2s ease-in-out infinite;
+}
+
+@keyframes nav-ai-shimmer {
+  0%,
+  15% {
+    transform: translateX(-130%);
+  }
+  45%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes nav-ai-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 16px rgba(236, 72, 153, 0.2),
+      0 0 32px rgba(139, 92, 246, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 26px rgba(139, 92, 246, 0.32),
+      0 0 48px rgba(56, 189, 248, 0.12);
+  }
+}
+
+@keyframes nav-ai-pulse-active {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.08);
+  }
+}
+
 .nav-btn--lang {
   min-width: auto;
   max-width: 14rem;
@@ -182,5 +269,17 @@ button.nav-btn {
   .site-header__nav {
     width: 100%;
     justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-btn--ai,
+  .nav-btn--ai-active {
+    animation: none !important;
+  }
+
+  .nav-btn--ai::before {
+    animation: none !important;
+    opacity: 0;
   }
 }

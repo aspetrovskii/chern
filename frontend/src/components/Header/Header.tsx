@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   LOCALE_META,
   flagImageUrl,
@@ -121,6 +122,8 @@ type HeaderProps = {
 };
 
 export function Header({ locale, onAuthChange }: HeaderProps) {
+  const location = useLocation();
+  const onChatRoute = location.pathname === "/chat";
   const session = getSessionUser();
 
   useEffect(() => {
@@ -162,7 +165,16 @@ export function Header({ locale, onAuthChange }: HeaderProps) {
             <span className={headerStyles["nav-text"]}>{t(locale, "nav_sign_in")}</span>
           </a>
         )}
-        <a className={headerStyles["nav-btn"]} href="#/chat">
+        <a
+          className={[
+            headerStyles["nav-btn"],
+            headerStyles["nav-btn--ai"],
+            onChatRoute ? headerStyles["nav-btn--ai-active"] : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          href="#/chat"
+        >
           <span className={headerStyles["nav-text"]}>{t(locale, "nav_chat")}</span>
         </a>
         <a className={headerStyles["nav-btn"]} href="#/saved-concerts">

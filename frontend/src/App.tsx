@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { getLocale, setLocale, subscribeLocale } from "./lib/i18n";
 import { installMockFetchInterceptor } from "./lib/mockApi";
+import { InteractiveBackdrop } from "./components/InteractiveBackdrop";
 import { Header } from "./components/Header/Header";
 import { HomePage } from "./components/Home/HomePage";
 import { HelpPage } from "./components/Help/HelpPage";
@@ -67,6 +68,7 @@ function AppRoutes() {
 
   return (
     <>
+      <InteractiveBackdrop />
       <Header locale={locale} onAuthChange={() => bumpHeader((n) => n + 1)} />
       <main className={mainClass}>
         <Routes>

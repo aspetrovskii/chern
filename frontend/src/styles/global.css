@@ -40,6 +40,10 @@
   --concert-amber: rgba(251, 191, 36, 0.14);
   --concert-magenta: rgba(236, 72, 153, 0.1);
   --concert-violet: rgba(139, 92, 246, 0.1);
+
+  /* Interactive backdrop (set by InteractiveBackdrop.tsx) */
+  --cursor-x: 50;
+  --cursor-y: 38;
 }
 
 *,
@@ -92,7 +96,7 @@ body {
   background-position: -1px -1px;
 }
 
-/* Soft “hall lights” — music / concert mood, stays behind #app */
+/* Soft “hall lights” + cursor-reactive spots — stays behind #app */
 body::before {
   content: "";
   position: fixed;
@@ -100,21 +104,58 @@ body::before {
   inset: -20%;
   z-index: 0;
   background:
-    radial-gradient(ellipse 70% 55% at 15% 20%, var(--concert-magenta), transparent 50%),
-    radial-gradient(ellipse 65% 50% at 85% 25%, var(--concert-violet), transparent 48%),
-    radial-gradient(ellipse 55% 45% at 50% 95%, var(--concert-amber), transparent 52%);
-  opacity: 0.85;
-  animation: concert-wash 28s ease-in-out infinite alternate;
+    radial-gradient(
+      ellipse 58% 48% at calc(var(--cursor-x) * 1%) calc(var(--cursor-y) * 1%),
+      rgba(236, 72, 153, 0.2),
+      transparent 46%
+    ),
+    radial-gradient(
+      ellipse 52% 42% at calc(100% - var(--cursor-x) * 1%) calc(var(--cursor-y) * 0.65 * 1% + 10%),
+      rgba(139, 92, 246, 0.16),
+      transparent 44%
+    ),
+    radial-gradient(
+      ellipse 48% 38% at calc(var(--cursor-x) * 0.45 * 1% + 28%) calc(var(--cursor-y) * 0.4 * 1% + 32%),
+      rgba(56, 189, 248, 0.1),
+      transparent 42%
+    ),
+    radial-gradient(ellipse 70% 55% at 14% 18%, var(--concert-magenta), transparent 50%),
+    radial-gradient(ellipse 65% 50% at 86% 24%, var(--concert-violet), transparent 48%),
+    radial-gradient(ellipse 55% 45% at 50% 96%, var(--concert-amber), transparent 52%);
+  opacity: 0.88;
+  will-change: transform, opacity, filter;
+  animation: concert-wash 22s ease-in-out infinite alternate;
 }
 
 @keyframes concert-wash {
   0% {
-    transform: translate(-2%, 1%) scale(1);
-    opacity: 0.75;
+    transform: translate(-2.5%, 1%) scale(1) rotate(-0.5deg);
+    opacity: 0.78;
   }
   100% {
-    transform: translate(3%, -2%) scale(1.06);
-    opacity: 0.95;
+    transform: translate(3.5%, -2.5%) scale(1.07) rotate(0.5deg);
+    opacity: 0.96;
+  }
+}
+
+html[data-bg-beat="1"] body::before {
+  animation:
+    concert-wash 22s ease-in-out infinite alternate,
+    bg-beat 0.52s ease-out 1;
+}
+
+@keyframes bg-beat {
+  0% {
+    filter: brightness(1) saturate(1);
+    opacity: 0.82;
+  }
+  35% {
+    filter: brightness(1.22) saturate(1.12);
+    opacity: 1;
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+    opacity: 0.9;
   }
 }
 
@@ -149,5 +190,9 @@ body.route-chat #app {
     animation: none !important;
     transform: none;
     opacity: 0.88;
+  }
+
+  html[data-bg-beat="1"] body::before {
+    animation: none !important;
   }
 }

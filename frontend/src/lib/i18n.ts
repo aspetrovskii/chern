@@ -5,7 +5,7 @@ const STORAGE_KEY = "conce-ai-locale";
 const MESSAGES: Record<Locale, Record<string, string>> = {
   en: {
     brand: "Conce Music AI",
-    nav_chat: "Chat",
+    nav_chat: "Chat with AI",
     nav_help: "Help",
     lang_label: "Language",
     home_hero_lead:
@@ -128,7 +128,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   ru: {
     brand: "Conce Music AI",
-    nav_chat: "Чат",
+    nav_chat: "Чат с AI",
     nav_help: "Помощь",
     lang_label: "Язык",
     home_hero_lead:
@@ -251,7 +251,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   tr: {
     brand: "Conce Music AI",
-    nav_chat: "Sohbet",
+    nav_chat: "AI ile sohbet",
     nav_help: "Yardım",
     lang_label: "Dil",
     home_hero_lead:
@@ -332,7 +332,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   hi: {
     brand: "Conce Music AI",
-    nav_chat: "चैट",
+    nav_chat: "AI से चैट",
     nav_help: "सहायता",
     lang_label: "भाषा",
     home_hero_lead:
@@ -413,7 +413,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   zh: {
     brand: "Conce Music AI",
-    nav_chat: "聊天",
+    nav_chat: "与 AI 对话",
     nav_help: "帮助",
     lang_label: "语言",
     home_hero_lead: "您专属的音乐与情绪智能。一句指令，一整片声音风景。",
@@ -492,7 +492,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   ur: {
     brand: "Conce Music AI",
-    nav_chat: "چیٹ",
+    nav_chat: "AI سے چیٹ",
     nav_help: "مدد",
     lang_label: "زبان",
     home_hero_lead:
@@ -573,7 +573,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   id: {
     brand: "Conce Music AI",
-    nav_chat: "Obrolan",
+    nav_chat: "Obrolan dengan AI",
     nav_help: "Bantuan",
     lang_label: "Bahasa",
     home_hero_lead:
@@ -654,7 +654,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   es: {
     brand: "Conce Music AI",
-    nav_chat: "Chat",
+    nav_chat: "Chat con IA",
     nav_help: "Ayuda",
     lang_label: "Idioma",
     home_hero_lead:
@@ -735,7 +735,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
   de: {
     brand: "Conce Music AI",
-    nav_chat: "Chat",
+    nav_chat: "Chat mit KI",
     nav_help: "Hilfe",
     lang_label: "Sprache",
     home_hero_lead:
