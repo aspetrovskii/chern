@@ -1,3 +1,5 @@
+import { handleMockApiV1 } from "./mockApiV1";
+
 const LATENCY_MS = 180;
 
 function delay(ms: number): Promise<void> {
@@ -29,6 +31,10 @@ export function installMockFetchInterceptor(): void {
   const original = window.fetch.bind(window);
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    if (import.meta.env.VITE_USE_MOCK_API === "true") {
+      const mocked = await handleMockApiV1(url, init);
+      if (mocked) return mocked;
+    }
     if (url.startsWith("/api/mock/")) {
       await delay(LATENCY_MS);
       if (url.includes("config")) {

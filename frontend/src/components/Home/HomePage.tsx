@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { t, type Locale } from "../../lib/i18n";
-import brandStyles from "../BrandText.module.css";
 import neoStyles from "../NeoSurface.module.css";
 import homeStyles from "./HomePage.module.css";
 
@@ -73,27 +72,6 @@ const PLACEHOLDER_PROMPTS: Record<Locale, string[]> = {
 
 type HomePageProps = { locale: Locale };
 
-const HOW_TO_ITEMS = [
-  {
-    titleKey: "home_howto_listen_title",
-    descKey: "home_howto_listen_desc",
-    image: "howto-listen.svg",
-    gradientAi: false,
-  },
-  {
-    titleKey: "home_howto_playlist_title",
-    descKey: "home_howto_playlist_desc",
-    image: "howto-playlists.svg",
-    gradientAi: false,
-  },
-  {
-    titleKey: "home_howto_ai_title",
-    descKey: "home_howto_ai_desc",
-    image: "howto-ai.svg",
-    gradientAi: true,
-  },
-] as const;
-
 const GITHUB_REPO_URL = "https://github.com/aspetrovskii/chern";
 
 export function HomePage({ locale }: HomePageProps) {
@@ -155,7 +133,9 @@ export function HomePage({ locale }: HomePageProps) {
   return (
     <div className={homeStyles["home-page"]}>
       <div className={homeStyles["home-shell"]}>
-        <section className={`${neoStyles["neo-surface"]} ${neoStyles["neo-surface--hero"]}`}>
+        <section
+          className={`${neoStyles["neo-surface"]} ${neoStyles["neo-surface--hero"]} ${neoStyles["neo-surface--hero-concert"]}`}
+        >
           <p className={homeStyles["home-hero__lead"]}>{t(locale, "home_hero_lead")}</p>
           <div className={homeStyles["home-input-wrap"]}>
             <div className={homeStyles["home-input-field"]}>
@@ -207,38 +187,6 @@ export function HomePage({ locale }: HomePageProps) {
                 </svg>
               </span>
             </button>
-          </div>
-        </section>
-        <section className={`${neoStyles["neo-surface"]} ${homeStyles["home-howto"]}`}>
-          <h2 className={homeStyles["home-howto__title"]}>{t(locale, "home_howto_title")}</h2>
-          <div className={homeStyles["home-howto__list"]}>
-            {HOW_TO_ITEMS.map((item) => (
-              <article key={item.titleKey} className={homeStyles["home-howto__item"]}>
-                <img
-                  className={homeStyles["home-howto__image"]}
-                  src={`${import.meta.env.BASE_URL}${item.image}`}
-                  alt=""
-                  width={260}
-                  height={146}
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className={homeStyles["home-howto__copy"]}>
-                  <p className={homeStyles["home-howto__text"]}>
-                    {item.gradientAi ? (
-                      <>
-                        {t(locale, "home_howto_ai_prefix")}
-                        <span className={brandStyles["logo-text"]}>AI</span>
-                        {t(locale, "home_howto_ai_suffix")}
-                      </>
-                    ) : (
-                      t(locale, item.titleKey)
-                    )}
-                  </p>
-                  <p className={homeStyles["home-howto__desc"]}>{t(locale, item.descKey)}</p>
-                </div>
-              </article>
-            ))}
           </div>
         </section>
         <section className={`${neoStyles["neo-surface"]} ${homeStyles["home-trust"]}`}>

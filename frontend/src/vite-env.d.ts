@@ -4,6 +4,8 @@ interface ImportMetaEnv {
   readonly VITE_TURNSTILE_SITE_KEY?: string;
   /** Backend origin for API (Docker web → api on another port). Empty = same origin / Vite proxy. */
   readonly VITE_API_BASE_URL?: string;
+  /** When "true", `/api/v1` is served in-browser (no Python backend); Vite proxy to :8000 is disabled. */
+  readonly VITE_USE_MOCK_API?: string;
 }
 
 interface ImportMeta {

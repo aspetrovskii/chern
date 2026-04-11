@@ -120,29 +120,6 @@ type HeaderProps = {
   onAuthChange: () => void;
 };
 
-function DevProvidersBadge({ locale }: { locale: Locale }) {
-  const [summary, setSummary] = useState<string | null>(null);
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    void fetch("/api/v1/providers/status")
-      .then((r) => r.json())
-      .then((b: { ui_data_source?: string }) => {
-        const key = b.ui_data_source === "real_providers" ? "dev_providers_real" : "dev_providers_mock";
-        setSummary(t(locale, key));
-      })
-      .catch(() => setSummary(t(locale, "dev_providers_mock")));
-  }, [locale]);
-  if (!import.meta.env.DEV || summary === null) return null;
-  return (
-    <span
-      className={headerStyles["dev-providers-badge"]}
-      title={`${t(locale, "dev_providers_label")}: ${summary}`}
-    >
-      {t(locale, "dev_providers_label")}: {summary}
-    </span>
-  );
-}
-
 export function Header({ locale, onAuthChange }: HeaderProps) {
   const session = getSessionUser();
 
@@ -194,7 +171,6 @@ export function Header({ locale, onAuthChange }: HeaderProps) {
         <a className={headerStyles["nav-btn"]} href="#/help">
           <span className={headerStyles["nav-text"]}>{t(locale, "nav_help")}</span>
         </a>
-        <DevProvidersBadge locale={locale} />
         <LangDropdown locale={locale} />
       </nav>
     </header>

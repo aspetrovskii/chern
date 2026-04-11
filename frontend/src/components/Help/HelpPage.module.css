@@ -8,19 +8,20 @@
 }
 
 .help-page__intro {
-  margin: 0 0 1.5rem;
-  font-size: 1.08rem;
-  font-weight: 600;
-  line-height: 1.45;
-  color: rgba(238, 241, 248, 0.94);
+  margin: 0 0 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--ide-text);
 }
 
 .help-page__thanks {
   margin: 0;
-  padding: 1.5rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+  padding: 1.25rem 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
   line-height: 1.5;
-  color: rgba(186, 230, 253, 0.95);
+  color: var(--ide-accent);
   text-align: center;
+  font-family: var(--font-mono);
 }
