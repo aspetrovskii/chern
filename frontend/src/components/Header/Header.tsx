@@ -12,6 +12,7 @@ import { getAccessToken } from "../../lib/api/http";
 import { getSessionUser, logoutUser, syncSessionFromApiMe } from "../../lib/auth";
 import headerStyles from "./Header.module.css";
 import brandStyles from "../BrandText.module.css";
+import { UserAvatar } from "./UserAvatar";
 
 const LANG_ORDER: Locale[] = ["ru", "en", "de", "es", "id", "tr", "hi", "ur", "zh"];
 
@@ -125,6 +126,8 @@ export function Header({ locale, onAuthChange }: HeaderProps) {
   const location = useLocation();
   const onChatRoute = location.pathname === "/chat";
   const onSubscriptionsRoute = location.pathname === "/subscriptions";
+  const onProfileRoute = location.pathname === "/profile";
+  const [profileTick, setProfileTick] = useState(0);
   const session = getSessionUser();
 
   useEffect(() => {
@@ -132,6 +135,12 @@ export function Header({ locale, onAuthChange }: HeaderProps) {
     if (!getAccessToken()) return;
     void syncSessionFromApiMe().then(() => onAuthChange());
   }, [onAuthChange]);
+
+  useEffect(() => {
+    const onProfile = () => setProfileTick((n) => n + 1);
+    window.addEventListener("conce-profile-updated", onProfile);
+    return () => window.removeEventListener("conce-profile-updated", onProfile);
+  }, []);
 
   return (
     <header className={headerStyles["site-header"]}>
@@ -145,11 +154,24 @@ export function Header({ locale, onAuthChange }: HeaderProps) {
       <nav className={headerStyles["site-header__nav"]} aria-label="Main">
         {session ? (
           <>
-            <span className={headerStyles["nav-user-label"]} title={session.email}>
-              {(session.login || session.email).length > 22
-                ? `${(session.login || session.email).slice(0, 20)}…`
-                : session.login || session.email}
-            </span>
+            <a
+              className={[
+                headerStyles["nav-user-profile"],
+                onProfileRoute ? headerStyles["nav-user-profile--active"] : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              href="#/profile"
+              aria-label={t(locale, "profile_nav_aria")}
+              title={session.email}
+            >
+              <UserAvatar key={profileTick} login={session.login} email={session.email} size={28} />
+              <span className={headerStyles["nav-user-label"]}>
+                {(session.login || session.email).length > 22
+                  ? `${(session.login || session.email).slice(0, 20)}…`
+                  : session.login || session.email}
+              </span>
+            </a>
             <button
               type="button"
               className={headerStyles["nav-btn"]}

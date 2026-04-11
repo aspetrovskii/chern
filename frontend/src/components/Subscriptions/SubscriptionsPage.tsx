@@ -36,8 +36,10 @@ export function SubscriptionsPage({ locale }: SubscriptionsPageProps) {
   const suffixKey = cycle === "monthly" ? "subs_price_suffix_mo" : "subs_price_suffix_yr";
 
   return (
-    <div className={styles["subs-page"]}>
-      <h1 className={layoutStyles["page-title"]}>{t(locale, "page_subscriptions_title")}</h1>
+    <div className={`${styles["subs-page"]} ${styles["subs-page--fit"]}`}>
+      <h1 className={`${layoutStyles["page-title"]} ${layoutStyles["page-title--compact"]}`}>
+        {t(locale, "page_subscriptions_title")}
+      </h1>
       <p className={styles["subs-lead"]}>{t(locale, "subs_hero_lead")}</p>
 
       <div className={styles["subs-toggle-wrap"]}>
@@ -78,8 +80,9 @@ export function SubscriptionsPage({ locale }: SubscriptionsPageProps) {
         id="subs-panels"
         role="tabpanel"
         aria-labelledby={cycle === "monthly" ? "subs-tab-monthly" : "subs-tab-yearly"}
-        className={styles["subs-grid"]}
+        className={styles["subs-panels"]}
       >
+        <div className={styles["subs-grid"]}>
         <article className={styles["subs-card"]}>
           <h2 className={styles["subs-card__name"]}>{t(locale, "subs_plan_free")}</h2>
           <p className={styles["subs-card__desc"]}>{t(locale, "subs_plan_desc_free")}</p>
@@ -147,6 +150,7 @@ export function SubscriptionsPage({ locale }: SubscriptionsPageProps) {
             </Link>
           )}
         </article>
+        </div>
       </div>
 
       <p className={styles["subs-footnote"]}>{t(locale, "subs_footnote")}</p>

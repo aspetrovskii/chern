@@ -9,6 +9,7 @@ import { HelpPage } from "./components/Help/HelpPage";
 import { AuthPage } from "./components/Auth/AuthPage";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { SavedConcertsPage } from "./components/SavedConcerts/SavedConcertsPage";
+import { ProfilePage } from "./components/Profile/ProfilePage";
 import { SubscriptionsPage } from "./components/Subscriptions/SubscriptionsPage";
 import { NowPlaying } from "./components/Home/NowPlaying";
 import layoutStyles from "./components/MainLayout.module.css";
@@ -45,6 +46,7 @@ function AppRoutes() {
   const isAuth = path === "/auth";
   const isChat = path === "/chat";
   const isHome = path === "/";
+  const isFitViewport = path === "/profile" || path === "/subscriptions";
 
   useEffect(() => {
     const cls = "route-chat";
@@ -61,8 +63,14 @@ function AppRoutes() {
     return () => document.body.classList.remove("route-home");
   }, [isHome]);
 
+  useEffect(() => {
+    document.body.classList.toggle("route-fit-viewport", isFitViewport);
+    return () => document.body.classList.remove("route-fit-viewport");
+  }, [isFitViewport]);
+
   const mainClass = [
     layoutStyles["main-area"],
+    isFitViewport ? layoutStyles["main-area--fit-viewport"] : "",
     !isChat && !playerCollapsed ? layoutStyles["main-area--with-player"] : "",
     !isChat && playerCollapsed ? layoutStyles["main-area--with-player-collapsed"] : "",
     isChat && !playerCollapsed ? layoutStyles["main-area--chat-player"] : "",
@@ -89,6 +97,7 @@ function AppRoutes() {
             <Route path="/chat" element={<ChatPage locale={locale} />} />
             <Route path="/saved-concerts" element={<SavedConcertsPage locale={locale} />} />
             <Route path="/subscriptions" element={<SubscriptionsPage locale={locale} />} />
+            <Route path="/profile" element={<ProfilePage locale={locale} />} />
             <Route path="/help" element={<HelpPage locale={locale} />} />
             <Route path="/auth" element={<AuthPage locale={locale} />} />
           </Routes>

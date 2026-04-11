@@ -16,6 +16,7 @@ import {
   apiPostChatPrompt,
   getCachedTrack,
 } from "../../lib/pendingBackendApi";
+import { recordChatPromptSent, recordChatVisit } from "../../lib/profileActivity";
 import { loadSavedConcertsFromStorage, persistSavedConcerts } from "../../lib/savedConcertsMvp";
 import { PoolSidebar } from "./PoolSidebar";
 
@@ -589,6 +590,10 @@ export function ChatPage({ locale }: ChatPageProps) {
   }, [activeChatId]);
 
   useEffect(() => {
+    recordChatVisit();
+  }, []);
+
+  useEffect(() => {
     const token = getAccessToken();
     if (!token) {
       navigate("/auth", { replace: true });
@@ -829,7 +834,10 @@ export function ChatPage({ locale }: ChatPageProps) {
       let targetId = created.id;
       if (text) {
         const next = await apiPostChatPrompt(created.id, text, locale);
-        if (next) targetId = next.id;
+        if (next) {
+          recordChatPromptSent();
+          targetId = next.id;
+        }
       }
       refresh(targetId);
       setPrompt("");
@@ -844,6 +852,7 @@ export function ChatPage({ locale }: ChatPageProps) {
     void (async () => {
       const next = await apiPostChatPrompt(chatId, text, locale);
       if (next) {
+        recordChatPromptSent();
         refresh(next.id);
         setPrompt("");
         setViewConcertVersion(null);

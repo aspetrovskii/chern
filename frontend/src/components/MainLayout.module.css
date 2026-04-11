@@ -54,6 +54,26 @@
   padding-bottom: 3.75rem;
 }
 
+.main-area--fit-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0.55rem 1rem 0.45rem;
+}
+
+.main-area--fit-viewport .main-area__stack {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main-area--fit-viewport .main-area__stack > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
 .page-title {
   margin: 0 0 0.65rem;
   font-size: 1.375rem;
@@ -61,6 +81,11 @@
   letter-spacing: -0.02em;
   color: var(--ide-text-bright);
   font-family: var(--font-ui);
+}
+
+.page-title--compact {
+  margin-bottom: 0.35rem;
+  font-size: 1.15rem;
 }
 
 .page-placeholder {

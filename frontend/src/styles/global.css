@@ -37,9 +37,9 @@
   --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
   /* Concert / stage accent (used with IDE base) */
-  --concert-amber: rgba(251, 191, 36, 0.14);
-  --concert-magenta: rgba(236, 72, 153, 0.1);
-  --concert-violet: rgba(139, 92, 246, 0.1);
+  --concert-amber: rgba(251, 191, 36, 0.26);
+  --concert-magenta: rgba(236, 72, 153, 0.2);
+  --concert-violet: rgba(139, 92, 246, 0.2);
 }
 
 *,
@@ -48,24 +48,15 @@
   box-sizing: border-box;
 }
 
+/* Hide scrollbars globally; scrolling via wheel / touch still works where overflow allows */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #424242 var(--ide-bg-deep);
+  scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: #424242;
-  border-radius: 5px;
-  border: 2px solid var(--ide-bg-deep);
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--ide-bg-deep);
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 html {
@@ -95,13 +86,13 @@ body::before {
   inset: -22%;
   z-index: 0;
   background:
-    radial-gradient(ellipse 72% 56% at 42% 38%, var(--concert-magenta), transparent 52%),
-    radial-gradient(ellipse 68% 52% at 58% 62%, var(--concert-violet), transparent 50%),
-    radial-gradient(ellipse 58% 48% at 50% 88%, var(--concert-amber), transparent 54%);
+    radial-gradient(ellipse 76% 58% at 42% 38%, var(--concert-magenta), transparent 56%),
+    radial-gradient(ellipse 72% 54% at 58% 62%, var(--concert-violet), transparent 54%),
+    radial-gradient(ellipse 62% 50% at 50% 88%, var(--concert-amber), transparent 58%);
   background-size: 170% 170%;
   background-repeat: no-repeat;
   background-position: 45% 40%;
-  opacity: 0.86;
+  opacity: 0.98;
   will-change: transform, opacity, filter, background-position;
   animation: concert-wash-drift 118s ease-in-out infinite alternate;
 }
@@ -114,26 +105,26 @@ body.route-home::before {
   0% {
     background-position: 32% 28%;
     transform: translate(-2.8%, 1.6%) scale(1) rotate(-0.45deg);
-    filter: hue-rotate(-12deg) saturate(1.02) brightness(0.93);
-    opacity: 0.8;
+    filter: hue-rotate(-12deg) saturate(1.04) brightness(0.97);
+    opacity: 0.92;
   }
   35% {
     background-position: 58% 52%;
     transform: translate(2.2%, -2.2%) scale(1.035) rotate(0.25deg);
-    filter: hue-rotate(8deg) saturate(1.1) brightness(1.02);
-    opacity: 0.9;
+    filter: hue-rotate(8deg) saturate(1.14) brightness(1.06);
+    opacity: 1;
   }
   68% {
     background-position: 44% 68%;
     transform: translate(-1.2%, 2.4%) scale(1.02) rotate(-0.15deg);
-    filter: hue-rotate(22deg) saturate(1.14) brightness(0.97);
-    opacity: 0.84;
+    filter: hue-rotate(22deg) saturate(1.16) brightness(1.02);
+    opacity: 0.94;
   }
   100% {
     background-position: 36% 34%;
     transform: translate(-2.2%, 0.8%) scale(1.01) rotate(-0.35deg);
-    filter: hue-rotate(-5deg) saturate(1.05) brightness(0.95);
-    opacity: 0.86;
+    filter: hue-rotate(-5deg) saturate(1.08) brightness(0.99);
+    opacity: 0.96;
   }
 }
 
@@ -155,6 +146,18 @@ body.route-chat #app {
   overflow: hidden;
 }
 
+/* Profile & subscriptions: no page scroll, content fits viewport column */
+body.route-fit-viewport {
+  overflow: hidden;
+  height: 100vh;
+}
+
+body.route-fit-viewport #app {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -167,7 +170,7 @@ body.route-chat #app {
   body::before {
     animation: none !important;
     transform: none;
-    opacity: 0.88;
+    opacity: 0.96;
     filter: none !important;
   }
 }
