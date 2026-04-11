@@ -37,7 +37,9 @@ export function SubscriptionsPage({ locale }: SubscriptionsPageProps) {
 
   return (
     <div className={`${styles["subs-page"]} ${styles["subs-page--fit"]}`}>
-      <h1 className={`${layoutStyles["page-title"]} ${layoutStyles["page-title--compact"]}`}>
+      <h1
+        className={`${layoutStyles["page-title"]} ${layoutStyles["page-title--compact"]} ${styles["subs-page__title"]}`}
+      >
         {t(locale, "page_subscriptions_title")}
       </h1>
       <p className={styles["subs-lead"]}>{t(locale, "subs_hero_lead")}</p>
