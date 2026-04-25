@@ -1,352 +1,754 @@
-# Conce Music AI — техническая спецификация
+# Conce Music AI
 
-Веб-приложение: пользователь описывает намерение в чате; бэкенд подбирает кандидатов из Spotify (из фиксированного плейлиста пользователя или из расширенного пула по поиску/рекомендациям), обогащает треки тегами через **YandexGPT**, упорядочивает «как сет-лист концерта» **симулированным отжигом** на графе переходов; результат отображается в чате как **упорядоченный плейлист** с воспроизведением через **Spotify** (Web Playback SDK / deep link).
+> Чат-приложение, в котором пользователь описывает музыкальное намерение, а бэкенд собирает из Spotify «концертный сет-лист»: размечает треки тегами через **YandexGPT** и упорядочивает их **симулированным отжигом**.
 
----
+[![Quality Gates](https://github.com/aspetrovskii/chern/actions/workflows/quality-gates.yml/badge.svg)](https://github.com/aspetrovskii/chern/actions/workflows/quality-gates.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.112%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-## 1. Принятые продуктовые и технические решения
-
-| № | Тема | Решение |
-|---|------|---------|
-| 1 | Длина концерта | **По умолчанию 10 треков**; в настройках **конкретного чата** пользователь может изменить целевую длину (поле в UI + `PATCH /chats/{id}`). |
-| 2 | Premium и плеер | Если у пользователя **есть Spotify Premium** — воспроизведение **на сайте** (Web Playback SDK). **Без Premium** — **редирект / открытие в клиенте Spotify** (deep link на плейлист или контекст), без обещания встроенного плеера. |
-| 3 | Языки запросов | **Приоритет — русский**; дополнительно закладываем **английский, турецкий, китайский** (промпты YandexGPT: определение языка или мультиязычные инструкции + нормализация выхода в одну JSON-схему). |
-| 4 | Редактирование после генерации | **Вариант B** — после генерации пользователь может **вручную менять порядок** треков в финальном списке (**drag-and-drop**); повторный отжиг **не обязателен** (опционально позже — «пересобрать с учётом закреплённых позиций»). Подробнее [§1.1](#11-редактирование-финального-концерта-вариант-b). |
-| 5 | Повторная генерация в чате | Хранить **версии концертов** (история), если это **не требует больших ресурсов** — для ожидаемой нагрузки (до **50 пользователей/день**) это **реалистично**: отдельные строки в `concerts` с монотонным `version` по `chat_id` + привязка к сообщению ассистента. |
-| 6 | Кэш в SQLite сверх отжига | **Хранить** метаданные для UI и признаки для отжига **в рамках [Spotify Developer Policy](https://developer.spotify.com/policy) и требований безопасности** — см. [§1.2](#12-кэш-метаданных-tos--безопасность). |
-| 7 | Тегирование LLM | **Ленивое**: теги запрашиваются при первом использовании трека в пайплайне; результат в `tracks_cache`; при повторном использовании — только из кэша (с учётом `llm_version` при смене промпта). |
-| 8 | Нагрузка | До **50 активных пользователей в день** — **без отдельной очереди/worker** на старте достаточно; умеренный rate limiting и таймауты на LLM. |
-| 9 | Архитектура бэкенда | **Один основной backend-процесс** (LLM и отжиг — модули внутри него; долгие шаги — async + статус в БД). |
-| 10 | Хостинг | **Свой VPS** (HTTPS, фиксированный `SPOTIFY_REDIRECT_URI`, секреты в env). |
-
-### 1.1 Редактирование финального концерта (вариант B)
-
-Речь **не** про редактор **пула** (альбом / артист / удаление из кандидатов — отдельно в спеке), а про **уже сгенерированный упорядоченный список** в ответе ассистента.
-
-**Принято:** пользователь может **переставлять треки вручную** (drag-and-drop) **без обязательного повторного отжига**. После сохранения порядка бэкенд:
-
-- обновляет `ordered_track_ids` у **текущей версии** концерта (или создаёт новую версию — решение команды: обычно проще править текущую с флагом «порядок менял пользователь»);
-- при наличии связанного **плейлиста Spotify** — **синхронизирует порядок** через API (`PUT` треков в плейлисте / replace), чтобы плеер и deep link совпадали с UI.
-
-*Отложено на последующие итерации:* отжиг с **закреплёнными позициями** (вариант C) — не входит в обязательный объём MVP.
-
-### 1.2 Кэш метаданных: ToS + безопасность
-
-**Принято:** хранить в SQLite **и данные для отжига, и компактные метаданные для UI** (`tracks_cache.raw_metadata`, `audio_features`, `llm_tags`), но **строго в рамках политики Spotify и практик безопасности**.
-
-**Зачем метаданные шире «ядра отжига»** (без изменения решения): меньше обращений к Spotify при открытии чата, быстрый рендер карточек, устойчивость к кратковременным сбоям API.
-
-**ToS / каталог Spotify (ориентиры для реализации):**
-
-- Кэшировать только то, что **разрешено** для вашего типа интеграции; актуально перечитывать [Developer Policy](https://developer.spotify.com/policy) и разделы про **кэширование** и **метаданные**.
-- **Не хранить** контент, на который нет прав (например **полные тексты песен** как продуктовую фичу без лицензии).
-- Не использовать кэш для **обхода ограничений** API; при необходимости **обновлять** устаревшие метаданные повторным запросом к Spotify.
-- В UI по возможности сохранять **атрибуцию** Spotify там, где это требуется правилами бренда/продукта.
-
-**Безопасность (данные на VPS):**
-
-- Файл SQLite и бэкапы — **только на доверенном хосте**, права доступа по минимуму (пользователь сервиса, не world-readable).
-- **Секреты** (`SPOTIFY_CLIENT_SECRET`, ключи Yandex, ключ шифрования токенов) — **только в env / secret store**, не в репозитории и не в `tracks_cache`.
-- **Refresh-токены** пользователей — **шифрование at-rest** (отдельно от кэша треков).
-- В логах **не писать** токены, полные ответы OAuth и избыточные PII.
-- Кэш треков содержит **публичные каталожные поля** (название, артисты, uri, ссылки на обложки), а не пароли пользователей.
-
-**Итог:** объём хранения — **минимально достаточный для UI и алгоритма**; политика Spotify и модель угроз для VPS зафиксированы как обязательные ограничения при проектировании схемы и деплоя.
+Поддерживается два источника треков: фиксированный плейлист пользователя и динамический пул (Spotify search + recommendations). Если ключи провайдеров не заданы, проект автоматически переключается в **mock-режим** — можно запускать и тестировать без сторонних аккаунтов.
 
 ---
 
-## 2. Что труднореализуемо и почему
+## Содержание
 
-| Область | Сложность | Почему |
-|--------|-----------|--------|
-| **Встроенный плеер в сайте** | Высокая | Требуется **Spotify Premium**, корректная работа **Web Playback SDK**, refresh токенов, CORS/HTTPS, обработка смены устройства. Без Premium — придётся смириться с редиректом в клиент Spotify. |
-| **«Концертное» качество порядка** | Средняя–высокая | Нет «истины»: нужна **хорошо откалиброванная целевая функция** (релевантность + плавность + дуга настроения). LLM-теги **шумные**; без аудио-признаков Spotify (Audio Features) качество хуже — их нужно обязательно включить в скоринг. |
-| **Режим «рандом 100–300 треков по запросу»** | Средняя | Один `search` даёт мало результатов; реально нужны **несколько запросов**, **recommendations/related**, **жанровые плейлисты**, дедупликация, фильтр по `market`, контроль дубликатов артистов. |
-| **Добавить «все треки артиста/альбома/плейлиста»** | Средняя | Много пагинации, лимиты API, таймауты UI; на бэкенде — батчи и лимиты «не больше N треков в пул чата». |
-| **Сохранение чатов + плейлистов** | Средняя | Нужна согласованная модель: сообщение ↔ снимок упорядоченного списка `track_id` ↔ опционально `spotify_playlist_id` на стороне Spotify. |
-| **Ручной порядок + Spotify** | Средняя | После drag-and-drop порядок в БД и в **плейлисте Spotify** должен **совпадать**; нужны валидация списка id, идемпотентность `PATCH`, обработка ошибок API при замене треков в плейлисте. |
-| **LLM на каждый трек** | Средняя–высокая | Стоимость и время; нужны **батчинг**, **кэш по track_id**, идемпотентность, повтор при ошибках. |
-| **Юридически «чистый» Spotify** | Низкая–средняя | Соблюдение [Spotify Developer Policy](https://developer.spotify.com/policy); не кэшировать контент сверх разрешённого; корректные формулировки в UI. |
-
----
-
-## 3. Цели и сценарии
-
-### Режим A — фиксированный плейлист
-
-1. Пользователь в чате выбирает **источник**: плейлист Spotify из своего аккаунта (или предварительно собранный пул в БД из плейлиста).
-2. Запрос пользователя → **структурирование намерения** (YandexGPT) → **отбор кандидатов** из пула (топ-K по релевантности: эмбеддинги/скалярный скор по тегам + Audio Features + текст запроса).
-3. **Отжиг** на полном графе или k-NN графе (рёбра между похожими/совместимыми треками) → итоговый порядок.
-4. Создание/обновление **плейлиста Spotify** (опционально, но удобно для воспроизведения) или передача упорядоченного списка URI во фронт для Web Playback.
-
-### Режим B — «случайный» пул
-
-1. По запросу формируется пул **100–300** `track_id` через комбинацию Spotify: `GET /search`, `GET /recommendations`, опционально треки из editorial/featured (если используете), с дедупликацией.
-2. Для пула — **тегирование** (кэш в SQLite), затем **отжиг** как в режиме A.
+- [Возможности](#возможности)
+- [Технологический стек](#технологический-стек)
+- [Архитектура](#архитектура)
+- [Быстрый старт](#быстрый-старт)
+- [Запуск через Docker](#запуск-через-docker)
+- [Конфигурация](#конфигурация)
+- [Использование](#использование)
+- [API](#api)
+- [Полезные команды](#полезные-команды)
+- [Тестирование](#тестирование)
+- [Деплой](#деплой)
+- [Roadmap](#roadmap)
+- [Вклад в проект](#вклад-в-проект)
+- [Лицензия](#лицензия)
+- [Troubleshooting](#troubleshooting)
+- [FAQ](#faq)
+- [Что проверить перед публикацией](#что-проверить-перед-публикацией)
 
 ---
 
-## 4. Рекомендуемый стек и разбиение сервисов
+## Возможности
 
-**Рекомендация для команды из 3 человек:**
-
-- **Один основной backend API** (например **FastAPI** + Python): OAuth Spotify, чаты, плейлисты, оркестрация пайплайна, запись в SQLite, вызовы к модулю отжига.
-- **Внутренние модули** в том же репозитории (пакеты `llm/`, `optimizer/`, `spotify/`), чтобы человек 2 и 3 не плодили лишний деплой на MVP. При росте — вынести worker.
-
-**Почему FastAPI**: быстрые OpenAPI-контракты для фронта, асинхронщина, удобно для интеграции с HTTP API YandexGPT и Spotify.
-
-**Docker**: `docker-compose.yml` с сервисом `api`, томом для SQLite (или bind mount для dev), переменные окружения для секретов.
+- **Чат-интерфейс** для запросов на естественном языке (приоритет — русский; UI поддерживает en / tr / zh).
+- **Парсинг намерения** через YandexGPT в JSON-схему (`intent`, `genres`, `mood_arc`, `energy`, `language`, `approx_length`, …).
+- **Два источника треков**:
+  - режим `fixed_pool` — выбранный плейлист Spotify пользователя;
+  - режим `spotify_discovery` — динамический пул через `search` + `recommendations`.
+- **Ленивое тегирование** треков через LLM: один запрос на трек, результат кэшируется в SQLite (инвалидация по `llm_version`).
+- **Симулированный отжиг** упорядочивает треки по многокомпонентной энергетической функции (релевантность, плавность переходов, дуга настроения, разнообразие).
+- **Spotify-интеграция**: OAuth, deep link «Открыть в Spotify», создание/обновление плейлиста в аккаунте пользователя.
+- **Ручное редактирование порядка** через `PATCH /chats/{id}/concert/order` с синхронизацией плейлиста Spotify.
+- **История версий концертов** в рамках чата.
+- **Mock-fallback** при `PROVIDER_MODE=auto` без реальных ключей.
+- **Многоязычный UI** (`frontend/src/lib/i18n.ts`).
+- **CI quality gates**: lint, unit-тесты, smoke-тесты, миграции БД (`.github/workflows/quality-gates.yml`).
 
 ---
 
-## 5. Внешние API
+## Технологический стек
 
-### 5.1 Spotify Web API (обязательно)
+| Слой | Технологии |
+|------|-----------|
+| **Backend API** | Python ≥ 3.11, FastAPI ≥ 0.112, Uvicorn ≥ 0.30, pydantic-settings ≥ 2.4 |
+| **БД и миграции** | SQLite, SQLAlchemy ≥ 2.0, Alembic ≥ 1.13 |
+| **LLM** | YandexGPT (Foundation Models API) + детерминированный mock-транспорт |
+| **Оптимизатор** | Симулированный отжиг (`src/optimizer/`) |
+| **Spotify** | Spotify Web API: OAuth, search, recommendations, audio features, playlists |
+| **Auth** | PyJWT ≥ 2.9, XOR + SHA-256 для шифрования refresh-токенов (`src/app/core/security.py`) |
+| **Frontend** | React 18.3, TypeScript ~5.6, Vite ^5.4, react-router-dom ^6.28 (HashRouter), CSS Modules |
+| **HTTP** | httpx ≥ 0.27 (backend), `fetch` (frontend) |
+| **Контейнеризация** | Docker (`python:3.12-slim-bookworm`, `node:20-alpine`, `nginx:1.27-alpine`), Docker Compose |
+| **Качество кода** | Ruff ≥ 0.5, pytest ≥ 8, `tsc --noEmit` |
 
-**Redirect URI (зафиксировано):** `http://127.0.0.1:8000/api/v1/auth/spotify/callback` — этот же URL регистрируется в Spotify Developer Dashboard и передаётся в `SPOTIFY_REDIRECT_URI` на бэкенде (должен совпадать посимвольно с тем, что Spotify вернёт в OAuth).
+---
 
-**Scopes (минимально разумный набор — уточнить под UX):**
+## Архитектура
 
-- `playlist-read-private`, `playlist-read-collaborative` — читать плейлисты пользователя.
-- `playlist-modify-public`, `playlist-modify-private` — создавать/редактировать плейлисты для «концерта».
-- `user-read-email` / `user-read-private` — по необходимости профиля.
-- Для Web Playback SDK обычно нужны `streaming`, `user-read-playback-state`, `user-modify-playback-state`.
+### Дерево репозитория
 
-**Ключевые эндпоинты:**
+```
+.
+├── src/                            # Python-пакеты бэкенда
+│   ├── app/
+│   │   ├── main.py                 # FastAPI app, CORS, /health, роутер
+│   │   ├── api/
+│   │   │   ├── routes/v1.py        # Все REST-эндпоинты /api/v1
+│   │   │   ├── schemas.py          # Pydantic DTO
+│   │   │   └── deps.py             # auth, get_db
+│   │   ├── core/
+│   │   │   ├── config.py           # Settings (pydantic-settings)
+│   │   │   ├── security.py         # JWT + шифрование refresh-токенов
+│   │   │   ├── oauth_state.py      # In-memory CSRF state для OAuth
+│   │   │   └── provider_logging.py # redact_secrets_in_text
+│   │   ├── db/
+│   │   │   ├── models.py           # ORM: User, Chat, Message, Concert, …
+│   │   │   └── session.py          # SQLite engine, SessionLocal
+│   │   └── services/
+│   │       ├── pipeline.py         # ConcertPipeline.run()
+│   │       └── providers.py        # Фабрика пайплайна
+│   ├── llm/                        # LLM-модуль
+│   │   ├── service.py              # parse_user_intent, tag_track
+│   │   ├── client.py               # LLMClient + RetryPolicy
+│   │   ├── cache.py                # SQLiteTrackCache
+│   │   ├── yandex_transport.py     # Реальный транспорт YandexGPT
+│   │   ├── mock_transport.py       # Детерминированный mock
+│   │   └── transport_factory.py    # build_llm_transport
+│   ├── optimizer/service.py        # optimize_order (симулированный отжиг)
+│   └── spotify/
+│       ├── http_client.py          # SpotifyBackedCatalog (httpx)
+│       ├── oauth.py                # authorize_url, exchange_code, fetch_me
+│       ├── client.py               # SpotifyTrack, SpotifyClientMock
+│       ├── factory.py              # build_spotify_catalog (real/mock)
+│       └── link_parse.py           # Парсинг Spotify URL/URI
+├── frontend/                       # React SPA
+│   ├── src/                        # App.tsx, components/, lib/
+│   ├── vite.config.ts              # Proxy /api → http://127.0.0.1:8000
+│   └── package.json
+├── alembic/versions/               # 20260410_01_init_schema, 20260410_02_concert_label
+├── docker/
+│   ├── Dockerfile.api              # python:3.12-slim, uvicorn, alembic upgrade head
+│   ├── Dockerfile.web              # multi-stage: node build → nginx serve
+│   └── nginx-web.conf
+├── scripts/
+│   ├── smoke_api.py                # Smoke API (TestClient, mock)
+│   ├── smoke_docker_compose.py     # Smoke compose-стека
+│   └── smoke_llm_pipeline.py       # Smoke LLM-пайплайна
+├── tests/                          # pytest (unit)
+├── docs/                           # SPECIFICATION.md, plans/
+├── docker-compose.yml
+├── pyproject.toml
+├── alembic.ini
+└── .env.example
+```
 
-| Задача | Эндпоинты |
+### Главные модули
+
+| Модуль | Назначение |
 |--------|-----------|
-| OAuth | `GET /authorize`, `POST /api/token` |
-| Профиль | `GET /me` |
-| Поиск пулов | `GET /search` (types: track, album, artist, playlist) |
-| Треки плейлиста | `GET /playlists/{id}/tracks` |
-| Альбом | `GET /albums/{id}/tracks` |
-| Топ треки артиста | `GET /artists/{id}/top-tracks` |
-| Дискография | `GET /artists/{id}/albums` + треки альбомов |
-| Рекомендации | `GET /recommendations` |
-| Аудио-признаки | `GET /audio-features` (батчами до 100 id) |
-| Создание/обновление плейлиста | `POST /users/{user_id}/playlists`, `PUT /playlists/{id}/tracks` |
-
-**Фронт:** Spotify Web Playback SDK + получение **OAuth token** с бэкенда (или PKCE flow — решение зафиксировать в п. «Безопасность»).
-
-### 5.2 YandexGPT (через Yandex Cloud Foundation Models / API)
-
-- **Запрос пользователя** → JSON-контракт: `{ intent, genres, mood_arc, energy, language, exclude_artists, approx_length, ... }` (язык входа: **ru приоритетно**, также **en, tr, zh** — в промпте: явное определение языка или единые правила извлечения сущностей).
-- **Тегирование трека**: вход — название, артисты, альбом, (опционально) краткий текст из Spotify, **audio_features**; выход — нормализованные теги и числовые оценки (строгая JSON-схема).
-- Требования: валидация ответа, retry, таймауты, **кэш по `spotify_track_id` + версии промпта**; **ленивое** тегирование (см. §1).
+| `src/app/api/routes/v1.py` | Все REST-эндпоинты: Spotify OAuth, чаты, сообщения, концерты, пул треков |
+| `src/app/services/pipeline.py` | `ConcertPipeline.run()` — намерение → кандидаты → теги → отжиг |
+| `src/llm/service.py` | `LLMService.parse_user_intent()`, `LLMService.tag_track()` |
+| `src/llm/cache.py` | `SQLiteTrackCache` — кэш тегов с инвалидацией по `llm_version` |
+| `src/optimizer/service.py` | `optimize_order()` — симулированный отжиг |
+| `src/spotify/http_client.py` | `SpotifyBackedCatalog` — поиск, рекомендации, audio features, плейлисты |
+| `frontend/src/lib/backendApi.ts` | Клиент к `/api/v1` с обработкой 401/5xx |
 
 ---
 
-## 6. Внутренний REST API (черновик контракта)
+## Быстрый старт
 
-Префикс, например: `/api/v1`. Все защищённые маршруты — session cookie или JWT после Spotify login.
+Минимальный путь до работающего приложения **без внешних провайдеров** (mock-режим): backend → миграции → frontend.
 
-| Метод | Путь | Назначение |
-|-------|------|------------|
-| `GET` | `/auth/spotify/login` | Редирект на Spotify |
-| `GET` | `/auth/spotify/callback` | Callback OAuth |
-| `POST` | `/auth/logout` | Выход |
-| `GET` | `/me` | Текущий пользователь + флаг Premium (если доступно) |
-| `GET` | `/chats` | Список чатов |
-| `POST` | `/chats` | Создать чат |
-| `GET` | `/chats/{id}` | История сообщений + метаданные |
-| `PATCH` | `/chats/{id}` | Режим (A/B), привязка source playlist id, **целевая длина концерта** (по умолчанию 10) |
-| `POST` | `/chats/{id}/messages` | Отправить запрос пользователя → старт пайплайна |
-| `GET` | `/chats/{id}/messages/{msg_id}` | Статус: `queued`, `tagging`, `optimizing`, `done`, `error` |
-| `GET` | `/spotify/playlists` | Плейлисты пользователя (для меню) |
-| `POST` | `/chats/{id}/pool` | Добавить в пул чата: track_ids / album_id / playlist_id / artist_id |
-| `DELETE` | `/chats/{id}/pool/tracks` | Удалить треки из пула |
-| `POST` | `/chats/{id}/generate` | Пересобрать концерт (после правок пула) |
-| `GET` | `/chats/{id}/concert` | Актуальный концерт: упорядоченный список + `spotify_playlist_id` |
-| `PATCH` | `/chats/{id}/concert/order` | **Ручной порядок (вариант B):** тело `{ "ordered_track_ids": ["spotify_id", ...] }` — та же перестановка без нового отжига; синхронизация порядка с **плейлистом Spotify**, если он создан |
-| `GET` | `/chats/{id}/concerts` | История **версий** концертов в чате (пагинация по желанию) |
+### Требования
 
-**Асинхронность:** длинные операции (LLM + отжиг) возвращают `202` + `job_id` или message в статусе `processing`; фронт опрашивает `GET .../messages/{id}` или WebSocket (опционально на v2).
+| Инструмент | Версия |
+|-----------|--------|
+| Python | ≥ 3.11 (CI использует 3.11; Docker — 3.12) |
+| Node.js | ≥ 20 |
+| npm | ≥ 10 (поставляется с Node 20) |
+| Git | любая актуальная |
+| Docker (опционально) | актуальная версия с плагином Compose |
 
----
-
-## 7. Алгоритм упорядочивания (отжиг)
-
-**Граф:** вершины — кандидаты (например 15–40 треков после отбора из пула 100–300).
-
-**Рёбра:** полный граф или k ближайших соседей по совместимости (жанр, tempo, energy, valence, ключ — если доступен через audio analysis опционально).
-
-**Энергия состояния перестановки π:**
-
-\[
-E(\pi) = \alpha E_{\text{rel}} + \beta E_{\text{trans}} + \gamma E_{\text{arc}} + \delta E_{\text{div}}
-\]
-
-- \(E_{\text{rel}}\) — нерелевантность запросу (по тегам LLM + ключевые слова).
-- \(E_{\text{trans}}\) — стоимость переходов \(\sum_i d(\pi_i, \pi_{i+1})\) (audio features + теги).
-- \(E_{\text{arc}}\) — отклонение от желаемой «дуги» (например рост energy к середине).
-- \(E_{\text{div}}\) — штраф за подряд один артист / слишком похожие треки.
-
-**Отжиг:** классический Metropolis по перестановкам (swap двух позиций или adjacent swap). Остановка по числу итераций или по температуре.
-
-**Альтернатива/гибрид:** beam search для первого порядка + локальный отжиг.
-
----
-
-## 8. Модель данных (SQLite)
-
-**Таблицы (черновик):**
-
-- `users` — `id`, `spotify_user_id`, `refresh_token` (шифровать at-rest), `created_at`
-- `chats` — `id`, `user_id`, `title`, `mode` (`fixed_pool` | `spotify_discovery`), `source_spotify_playlist_id` (nullable), **`target_track_count` (INTEGER, default 10)**, `created_at`, `updated_at`
-- `messages` — `id`, `chat_id`, `role` (`user` | `assistant` | `system`), `content` (текст), `structured_intent` (JSON), `status`, `error`, `created_at`
-- `concerts` — `id`, `chat_id`, `message_id` (assistant), **`version` (INTEGER, монотонно в рамках `chat_id`)**, `ordered_track_ids` (JSON array), `spotify_playlist_id` (nullable), **`order_source`** (`optimizer` \| `user` — последний способ задания порядка), `created_at`, `updated_at` (для ручных правок); уникальность `(chat_id, version)` или `version = MAX+1` при новой генерации от ассистента
-- `tracks_cache` — `spotify_track_id` (PK), `raw_metadata` (JSON), `audio_features` (JSON), `llm_tags` (JSON), `llm_version`, `updated_at`
-- `chat_pool_tracks` — `chat_id`, `spotify_track_id`, `added_via` (`manual` | `album` | `playlist` | `artist` | `generator`), уникальный ключ `(chat_id, spotify_track_id)`
-
-Индексы по `chat_id`, `spotify_track_id`, `updated_at` для кэша.
-
----
-
-## 9. Фронтенд (SPA)
-
-**Стек на выбор команды** (согласовать): React или Vue + TypeScript.
-
-**Экраны/блоки:**
-
-1. Логин Spotify.
-2. Список чатов + создание.
-3. Чат: лента сообщений; ответ-ассистент рендерит **плеер-блок** (**Web Playback SDK** при Premium, иначе **«Открыть в Spotify»**); в настройках чата — **целевая длина концерта** (дефолт 10). У готового концерта — **перетаскивание треков** (drag-and-drop), сохранение через `PATCH .../concert/order`.
-4. Боковая панель / модалка **редактора пула**: режим, выбор плейлиста-источника, поиск Spotify, добавление альбома/артиста/плейлиста, удаление треков, кнопка «Собрать концерт»; опционально просмотр **истории версий** концерта (если заложено в MVP).
-
-**Состояние:** опрос статуса длинных задач или SSE/WebSocket позже.
-
----
-
-## 10. Безопасность
-
-- Хранить `SPOTIFY_CLIENT_SECRET`, ключи Yandex Cloud **только на сервере**.
-- **Refresh token** Spotify — в БД с шифрованием (ключ в env).
-- Redirect URI только HTTPS в проде.
-- CORS: только origin фронта.
-- Лимиты запросов per user для дорогих эндпоинтов (при **≤50 пользователей/день** достаточно простых лимитов без отдельного брокера очередей).
-- Кэш метаданных треков и политика хранения — см. [§1.2](#12-кэш-метаданных-tos--безопасность).
-
----
-
-## 11. Docker
-
-- Образ `api`: Python slim, `uvicorn` (или gunicorn+uvicorn workers).
-- `docker-compose`: сервис `web` (опционально nginx для статики фронта) + `api`, volume `data:/app/data` для `sqlite.db`.
-- Переменные: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`, `YANDEX_*`, `JWT_SECRET` / session secret, `FRONTEND_URL`.
-
----
-
-## 12. Роли в команде и владение Spotify API
-
-| Роль | Ответственность |
-|------|-----------------|
-| **Фронт (чел. 1)** | UI чатов, OAuth UX (редирект), интеграция Web Playback SDK, отображение плейлистов, **drag-and-drop порядка концерта**, редактор пула, поллинг статусов |
-| **Бэк LLM (чел. 2)** | Промпты YandexGPT, парсинг намерения, тегирование треков, валидация JSON, кэш-логика тегов, тесты на «галлюцинации» |
-| **Бэк интеграция + отжиг (чел. 3)** | Spotify OAuth и токены, все вызовы Spotify Web API, сбор пула 100–300, audio features, отжиг, SQLite-схема, Docker, деплой, склейка с фронтом |
-
-**Кому удобнее Spotify API — второму или третьему?**
-
-**Третьему.** Причины: Spotify тесно связан с **OAuth, плейлистами, поиском, передачей треков во фронт**, с **SQLite** и **деплоем**; это один связный «контур продукта». Второму достаточно **стабильного внутреннего контракта**: «вот массив треков с метаданными и audio features — верни теги / вот текст — верни structured intent». Так меньше конфликтов вокруг секретов и redirect URI, проще отладка end-to-end.
-
-*Если второму сильно хочется Spotify ради экспериментов — пусть использует **read-only** поиск в dev, но **владелец интеграции в проде** остаётся у третьего.*
-
----
-
-## 13. Этапы внедрения (MVP → v1)
-
-1. OAuth + сохранение пользователя + минимальный чат без LLM (фиксированный порядок из плейлиста).
-2. Подтягивание audio features + простой скоринг без LLM.
-3. YandexGPT: structured intent + теги + кэш.
-4. Отжиг и режим B (пул 100–300).
-5. Web Playback SDK + fallback deep link.
-6. Редактор пула (альбом/артист/плейлист) с лимитами.
-7. Ручной порядок концерта (drag-and-drop) + `PATCH /concert/order` + синхронизация плейлиста Spotify.
-
----
-
-## 14. Локальная разработка и Docker
-
-### 14.1. Переменные окружения
-
-1. Скопируйте шаблон: `cp .env.example .env` (Windows: `copy .env.example .env`).
-2. Заполните секреты: Spotify, Yandex (или оставьте пустыми — см. fallback ниже), `CRYPTO_KEY`, `JWT_SECRET`.
-3. `PROVIDER_MODE=auto` (по умолчанию): при отсутствии валидных кредов для Yandex/Spotify бэкенд использует mock-транспорты; в API `GET /api/v1/providers/status` поле `ui_data_source` покажет `real_providers` или `mock_fallback`. Принудительно: `mock` или `real`.
-
-### 14.2. Режим без Docker (бэкенд + Vite)
-
-Терминал 1 — API из корня репозитория (`PYTHONPATH` уже в `pytest`; для ручного запуска):
+### 1. Установка зависимостей
 
 ```bash
+# Backend (editable + dev)
+pip install -e ".[dev]"
+
+# Frontend
+cd frontend
+npm install
+cd ..
+```
+
+### 2. Конфигурация
+
+```bash
+# Linux / macOS
+cp .env.example .env
+
+# Windows (PowerShell)
+Copy-Item .env.example .env
+```
+
+Откройте `.env` и **обязательно** замените значения по умолчанию для секретов:
+
+```dotenv
+CRYPTO_KEY=<случайная строка ≥ 32 символа>
+JWT_SECRET=<случайная строка ≥ 32 символа>
+```
+
+Поля `SPOTIFY_*` и `YANDEX_*` можно оставить пустыми — при `PROVIDER_MODE=auto` бэкенд переключится на mock. Полная таблица переменных — в разделе [Конфигурация](#конфигурация).
+
+### 3. Миграции БД
+
+`PYTHONPATH` должен указывать на `src/` (Alembic-миграции импортируют `app.db`).
+
+```bash
+# Linux / macOS
+PYTHONPATH=src python -m alembic upgrade head
+```
+
+```powershell
+# Windows (PowerShell)
+$env:PYTHONPATH = "src"
 python -m alembic upgrade head
+```
+
+### 4. Запуск в dev-режиме
+
+Откройте **два терминала**.
+
+**Терминал 1 — Backend (FastAPI / Uvicorn):**
+
+```bash
+# Linux / macOS
+PYTHONPATH=src uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+```powershell
+# Windows (PowerShell)
+$env:PYTHONPATH = "src"
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-(Из каталога с `src`: задайте `PYTHONPATH=src` или запускайте из IDE с этим путём.)
-
-Терминал 2 — фронт:
+**Терминал 2 — Frontend (Vite):**
 
 ```bash
-cd frontend && npm install && npm run dev
+cd frontend
+npm run dev
 ```
 
-Vite проксирует `/api` на `http://127.0.0.1:8000`. Откройте URL из вывода Vite (порт по умолчанию в проекте — `5174`). В `.env` укажите `FRONTEND_PUBLIC_URL` с этим портом, если отличается от примера.
+Vite запускается на `http://127.0.0.1:5174` и проксирует `/api` на `http://127.0.0.1:8000`.
 
-### 14.3. Docker Compose (API + статический фронт)
+### 5. Smoke-проверка
 
-Файл `docker-compose.yml`: сервис **`api`** (FastAPI, порт **8000**), **`web`** (nginx со сборкой SPA, порт **8080**), том **`conce_data`** для SQLite (`sqlite.db`, `llm_cache.db`).
+| Проверка | Команда / URL | Ожидаемый результат |
+|---------|---------------|---------------------|
+| Backend жив | `curl http://127.0.0.1:8000/health` | `{"status":"ok"}` |
+| Режим провайдеров | `curl http://127.0.0.1:8000/api/v1/providers/status` | JSON с `ui_data_source` |
+| Frontend | открыть `http://127.0.0.1:5174` | страница загружается без ошибок в консоли |
+| Полный пайплайн (mock) | `python scripts/smoke_api.py` | `smoke_api: OK` |
 
-1. Подготовьте `.env` в корне репозитория (compose читает его как `env_file`).
-2. Для стека в браузере выставьте как минимум:
-   - `FRONTEND_PUBLIC_URL=http://127.0.0.1:8080` — куда бэкенд редиректит после Spotify OAuth;
-   - `SPOTIFY_REDIRECT_URI=http://127.0.0.1:8000/api/v1/auth/spotify/callback` — должен **совпадать** с URI в [Spotify Dashboard](https://developer.spotify.com/dashboard) (как в §5.1).
-3. Запуск:
+> **Важно (Spotify OAuth).** Чтобы залогиниться через реальный Spotify, зарегистрируйте redirect URI в [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) **посимвольно** так же, как в `.env`:
+> `http://127.0.0.1:8000/api/v1/auth/spotify/callback`.
+
+---
+
+## Запуск через Docker
+
+### Требования
+
+- Docker Desktop (или Docker Engine + Compose plugin).
+- Заполненный `.env` в корне репозитория (см. [Конфигурация](#конфигурация)).
+
+### Сборка и запуск
 
 ```bash
 docker compose up --build
 ```
 
-Если Docker ругается на пустое имя проекта (редко — из‑за имени каталога), задайте его явно: `COMPOSE_PROJECT_NAME=conce-music docker compose up --build`. В `docker-compose.yml` уже задано `name: conce-music`.
+Compose поднимает два сервиса:
 
-4. Проверка:
-   - Health API: `curl http://127.0.0.1:8000/health` → `{"status":"ok"}`;
-   - UI: `http://127.0.0.1:8080/`.
+| Сервис | Dockerfile | Порт хоста | Что делает |
+|--------|-----------|------------|-----------|
+| `api` | `docker/Dockerfile.api` | `8000` | `alembic upgrade head` → `uvicorn app.main:app` |
+| `web` | `docker/Dockerfile.web` | `8080` | nginx + собранный Vite SPA |
 
-Сборка фронта в образе задаёт `VITE_API_BASE_URL=http://127.0.0.1:8000`, чтобы SPA с порта 8080 ходила на API на 8000. Если вы публикуете приложение под другими хостами/портами, пересоберите образ `web` с другим `build.args.VITE_API_BASE_URL` в `docker-compose.yml`.
+Данные SQLite хранятся в именованном томе `conce_data` (`/app/data/sqlite.db`, `/app/data/llm_cache.db`).
 
-5. Smoke после запуска (на хосте, с работающим compose):
+### Проверка
 
 ```bash
+curl http://127.0.0.1:8000/health
 python scripts/smoke_docker_compose.py
-```
 
-6. Smoke пайплайна API внутри контейнера (FastAPI `TestClient`): скрипт сам запускает изолированный дочерний процесс с `PROVIDER_MODE=mock`, пустыми ключами Spotify/Yandex и **временной SQLite**, чтобы не зависеть от секретов в `.env` и не писать в том же файле БД, что и работающий `uvicorn`.
-
-```bash
+# Smoke API внутри контейнера (изолированная SQLite, PROVIDER_MODE=mock)
 docker compose exec api python /app/scripts/smoke_api.py
 ```
 
----
+UI открывается на `http://127.0.0.1:8080/`.
 
-## 15. Quality gates (этап стабилизации)
+### Остановка
 
-Перед merge в `develop` должны проходить:
-
-- **Lint**
-  - frontend: `npm run lint` (в каталоге `frontend`)
-  - backend: `python -m ruff check src tests scripts`
-- **Unit**
-  - backend: `python -m pytest`
-- **Integration smoke**
-  - backend: `python scripts/smoke_llm_pipeline.py`
-  - backend api: `python -m alembic upgrade head` + `python scripts/smoke_api.py`
-  - frontend: `npm run smoke` (в каталоге `frontend`)
-  - после `docker compose up`: `python scripts/smoke_docker_compose.py` и при необходимости `docker compose exec api python /app/scripts/smoke_api.py`
-
-CI workflow: `.github/workflows/quality-gates.yml`
+```bash
+docker compose down       # остановить
+docker compose down -v    # остановить и удалить том с данными
+```
 
 ---
 
-## Лицензии и политики
+## Конфигурация
 
-Соблюдать [Spotify Developer Terms](https://developer.spotify.com/terms) и условия Yandex Cloud для выбранной модели YandexGPT.
+Все настройки читаются из `.env` через `pydantic-settings` (`src/app/core/config.py`). Неизвестные ключи игнорируются (`extra="ignore"`).
+
+### Backend (`.env`)
+
+| Переменная | Обязательна | По умолчанию (`.env.example`) | Описание |
+|-----------|:-----------:|--------------------------------|---------|
+| `APP_BASE_URL` | — | `http://127.0.0.1:8000` | Базовый URL бэкенда |
+| `FRONTEND_PUBLIC_URL` | — | `http://127.0.0.1:8080` | URL фронта (цель редиректа после OAuth) |
+| `PROVIDER_MODE` | — | `auto` | `auto` / `real` / `mock` |
+| `DB_PATH` | — | `data/sqlite.db` | Путь к файлу БД |
+| `LLM_CACHE_DB_PATH` | — | `data/llm_cache.db` | Путь к файлу кэша тегов LLM |
+| `CRYPTO_KEY` | **да** | (плейсхолдер) | Ключ шифрования refresh-токенов (≥ 32 символа) |
+| `JWT_SECRET` | **да** | (плейсхолдер) | Секрет подписи JWT (≥ 32 символа) |
+| `JWT_ALGORITHM` | — | `HS256` | Алгоритм JWT |
+| `JWT_EXPIRES_MINUTES` | — | `1440` | Срок жизни JWT, минуты |
+| `SPOTIFY_CLIENT_ID` | для `real`-режима | — | Client ID из Spotify Dashboard |
+| `SPOTIFY_CLIENT_SECRET` | для `real`-режима | — | Client Secret из Spotify Dashboard |
+| `SPOTIFY_REDIRECT_URI` | для `real`-режима | `http://127.0.0.1:8000/api/v1/auth/spotify/callback` | Должен совпадать с URI в Dashboard |
+| `SPOTIFY_SCOPES` | — | см. `.env.example` | Пробел-разделённые scopes |
+| `SPOTIFY_MARKET` | — | `US` | ISO 3166-1 alpha-2 (или пусто) |
+| `SPOTIFY_HTTP_TIMEOUT_SECONDS` | — | `20` | Таймаут HTTP к Spotify, сек |
+| `SPOTIFY_MAX_RETRIES` | — | `3` | Число ретраев Spotify |
+| `SPOTIFY_RETRY_BASE_DELAY_SECONDS` | — | `0.5` | Базовая задержка ретраев Spotify |
+| `SPOTIFY_RETRY_MAX_JITTER_SECONDS` | — | `0.5` | Максимальный jitter ретраев Spotify |
+| `YANDEX_MODEL_URI` | для реального LLM* | — | Полный URI модели YandexGPT |
+| `YANDEX_FOLDER_ID` | если нет `YANDEX_MODEL_URI` | — | ID каталога Yandex Cloud |
+| `YANDEX_MODEL_ID` | — | `yandexgpt/rc` | ID модели (используется с `FOLDER_ID`) |
+| `YANDEX_COMPLETION_URL` | — | `https://llm.api.cloud.yandex.net/foundationModels/v1/completion` | URL completion API |
+| `YANDEX_API_KEY` | для реального LLM** | — | API-ключ Yandex Cloud |
+| `YANDEX_IAM_TOKEN` | для реального LLM** | — | IAM-токен (альтернатива `YANDEX_API_KEY`) |
+| `LLM_TIMEOUT_SECONDS` | — | `45` | Таймаут запроса к LLM, сек |
+| `LLM_RETRY_ATTEMPTS` | — | `3` | Число ретраев LLM |
+| `LLM_RETRY_BASE_BACKOFF_SECONDS` | — | `0.35` | Базовый backoff между ретраями LLM |
+| `LLM_RETRY_MAX_JITTER_SECONDS` | — | `0.4` | Максимальный jitter ретраев LLM |
+| `LLM_MAX_TOKENS` | — | `2000` | Лимит токенов в ответе LLM |
+| `LLM_TEMPERATURE` | — | `0.2` | Температура генерации LLM |
+
+> \* Достаточно одного: `YANDEX_MODEL_URI` **или** пары `YANDEX_FOLDER_ID` + `YANDEX_MODEL_ID`.
+> \** Для аутентификации в YandexGPT нужен один из двух: `YANDEX_API_KEY` **или** `YANDEX_IAM_TOKEN`.
+
+### Frontend (Vite)
+
+Передаются как `build.args` в `docker-compose.yml` или через `frontend/.env*` для локальной сборки.
+
+| Переменная | По умолчанию | Описание |
+|-----------|--------------|---------|
+| `VITE_API_BASE_URL` | `http://127.0.0.1:8000` | Base URL API в production-сборке |
+| `VITE_TURNSTILE_SITE_KEY` | — | Site key Cloudflare Turnstile (опционально) |
+
+> **Важно.** Значения `VITE_*` запекаются в бандл на этапе `npm run build`. После их изменения нужна пересборка `web`-образа.
+
+---
+
+## Использование
+
+### Типовой сценарий
+
+1. Откройте UI: `http://127.0.0.1:5174` (dev) или `http://127.0.0.1:8080` (Docker).
+2. Нажмите «Войти через Spotify» — произойдёт OAuth-редирект.
+3. После авторизации — список чатов, создайте новый.
+4. В настройках чата выберите режим:
+   - **`fixed_pool`** — укажите свой плейлист Spotify;
+   - **`spotify_discovery`** — динамический подбор по запросу.
+5. Введите запрос, например: *«Медленный меланхоличный вечер, русский рок 90-х, около 10 треков»*.
+6. Бэкенд запускает пайплайн `parse_intent → collect_candidates → tag_tracks → optimize_order`.
+7. Статус сообщения меняется по мере прогресса: `queued → tagging → optimizing → done` (или `error`).
+8. В ответе ассистента появляется упорядоченный плейлист. Клик «Открыть в Spotify» — deep link в нативный клиент.
+9. Перетаскивание треков (drag-and-drop) сохраняет порядок в БД и синхронизирует плейлист в Spotify.
+
+### Проверка режима провайдеров
+
+```bash
+curl http://127.0.0.1:8000/api/v1/providers/status
+```
+
+```json
+{
+  "provider_mode": "auto",
+  "llm": "mock",
+  "yandex_configured": false,
+  "spotify_oauth_configured": true,
+  "ui_data_source": "mock_fallback"
+}
+```
+
+`ui_data_source: "real_providers"` — используются реальные Spotify и Yandex.
+
+---
+
+## API
+
+Все защищённые маршруты требуют заголовок `Authorization: Bearer <JWT>`, выдаваемый после Spotify OAuth.
+
+OpenAPI-документация запущенного бэкенда:
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
+
+### Эндпоинты `/api/v1`
+
+#### Статус и диагностика
+
+| Метод | Путь | Описание |
+|-------|------|---------|
+| `GET` | `/health` | Health check (вне `/api/v1`) — `{"status":"ok"}` |
+| `GET` | `/api/v1/providers/status` | Режим провайдеров, статус Yandex/Spotify |
+
+#### Аутентификация
+
+| Метод | Путь | Описание |
+|-------|------|---------|
+| `GET` | `/auth/spotify/login` | URL для редиректа на Spotify |
+| `GET` | `/auth/spotify/callback` | OAuth callback (редирект из Spotify) |
+| `POST` | `/auth/spotify/callback` | OAuth callback (JSON-обмен на JWT) |
+| `POST` | `/auth/logout` | Выход (`204 No Content`) |
+| `GET` | `/me` | Текущий пользователь |
+
+#### Чаты
+
+| Метод | Путь | Описание |
+|-------|------|---------|
+| `GET` | `/chats` | Список чатов пользователя |
+| `POST` | `/chats` | Создать чат |
+| `GET` | `/chats/{id}` | Метаданные чата |
+| `PATCH` | `/chats/{id}` | Обновить `title` / `mode` / `source_spotify_playlist_id` / `target_track_count` (5–30) |
+| `DELETE` | `/chats/{id}` | Удалить чат (`204`) |
+
+#### Сообщения и пайплайн
+
+| Метод | Путь | Описание |
+|-------|------|---------|
+| `POST` | `/chats/{id}/messages` | Запуск пайплайна (`202 Accepted`) |
+| `GET` | `/chats/{id}/messages` | Список сообщений чата |
+| `GET` | `/chats/{id}/messages/{msg_id}` | Статус: `queued` / `tagging` / `optimizing` / `done` / `error` |
+
+#### Концерт
+
+| Метод | Путь | Описание |
+|-------|------|---------|
+| `GET` | `/chats/{id}/concert` | Текущий концерт: упорядоченный список + `spotify_playlist_id` |
+| `PATCH` | `/chats/{id}/concert/order` | `{"ordered_track_ids": ["id1", "id2", ...]}` — ручной порядок |
+| `PATCH` | `/chats/{id}/concert/meta` | Обновление мета-полей концерта |
+| `GET` | `/chats/{id}/concerts` | История версий концертов |
+| `POST` | `/chats/{id}/generate` | Пересобрать концерт после правок пула (`202`) |
+
+#### Пул треков и Spotify
+
+| Метод | Путь | Описание |
+|-------|------|---------|
+| `GET` | `/spotify/playlists` | Плейлисты Spotify пользователя |
+| `GET` | `/chats/{id}/pool` | Текущий пул треков |
+| `POST` | `/chats/{id}/pool` | Добавить в пул: `track_ids` / `album_id` / `playlist_id` / `artist_id` (`204`) |
+| `DELETE` | `/chats/{id}/pool/tracks` | Удалить треки из пула (`204`) |
+| `POST` | `/tracks/resolve` | Резолвинг Spotify URL/URI в метаданные |
+
+### Формат ошибки
+
+Все ошибки нормализованы в общий формат (`src/app/main.py`, `ErrorDTO`):
+
+```json
+{
+  "error_code": "http_404",
+  "message": "Chat not found"
+}
+```
+
+`POST /chats/{id}/messages` и `POST /chats/{id}/generate` возвращают `202 Accepted` — фронт опрашивает `GET /chats/{id}/messages/{msg_id}` до статуса `done` или `error`.
+
+---
+
+## Полезные команды
+
+### Frontend (`frontend/`)
+
+```bash
+npm run dev          # Vite dev на 5174
+npm run build        # tsc -b + vite build (production)
+npm run typecheck    # tsc --noEmit
+npm run lint         # alias к typecheck
+npm run smoke        # alias к build (используется в CI)
+npm run preview      # Превью production-сборки на 5174
+```
+
+### Backend
+
+```bash
+# Миграции (PYTHONPATH=src обязателен)
+python -m alembic upgrade head
+python -m alembic downgrade -1
+python -m alembic revision --autogenerate -m "name"
+
+# Lint / Format
+python -m ruff check src tests scripts
+python -m ruff check --fix src tests
+
+# API вручную
+PYTHONPATH=src uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### Smoke-скрипты
+
+```bash
+# LLM-пайплайн (без внешних провайдеров)
+python scripts/smoke_llm_pipeline.py
+
+# API через TestClient (изолированная SQLite, PROVIDER_MODE=mock)
+python scripts/smoke_api.py
+
+# Запущенный Docker Compose стек
+python scripts/smoke_docker_compose.py
+
+# То же, но из контейнера
+docker compose exec api python /app/scripts/smoke_api.py
+```
+
+### Docker
+
+```bash
+docker compose up --build           # Сборка и запуск
+docker compose up --build -d        # В фоне
+docker compose logs -f api          # Логи API
+docker compose down                 # Остановить
+docker compose down -v              # + удалить том данных
+```
+
+---
+
+## Тестирование
+
+### Запуск unit-тестов
+
+```bash
+python -m pytest          # все тесты
+python -m pytest -v       # подробный вывод
+python -m pytest tests/test_llm_service.py -v   # один файл
+```
+
+`pythonpath = ["src"]` уже задан в `pyproject.toml` — экспортировать `PYTHONPATH` для pytest не требуется. Тесты используют mock-транспорт, реальные ключи не нужны.
+
+### Покрытие
+
+| Файл | Что тестируется |
+|------|----------------|
+| `tests/test_llm_service.py` | `parse_user_intent` (успех + фоллбэк при невалидном JSON), `SQLiteTrackCache` (miss/hit), фоллбэк тегирования при ошибке транспорта |
+| `tests/test_spotify_link_parse.py` | `parse_spotify_link`, нормализация `playlist_id` / `track_id` |
+
+### CI quality gates
+
+`.github/workflows/quality-gates.yml` запускает на `pull_request` и `push: develop`:
+
+1. `python -m ruff check src tests scripts`
+2. `python -m pytest`
+3. `python scripts/smoke_llm_pipeline.py`
+4. `python -m alembic upgrade head` + `python scripts/smoke_api.py`
+5. `npm run lint` (frontend `tsc --noEmit`)
+6. `npm run smoke` (frontend `npm run build`)
+
+---
+
+## Деплой
+
+> Базовая инструкция; production-конфигурация (HTTPS, домен, мониторинг) под конкретный VPS — **планируется / требует уточнения**.
+
+1. Поднять VPS с Docker и Compose plugin.
+2. Склонировать репозиторий, создать `.env` с production-значениями:
+   - `APP_BASE_URL`, `SPOTIFY_REDIRECT_URI` — реальный домен с HTTPS;
+   - `FRONTEND_PUBLIC_URL` — URL фронта;
+   - все секреты (`CRYPTO_KEY`, `JWT_SECRET`, `SPOTIFY_*`, `YANDEX_*`) — из переменных окружения сервера или secret-store.
+3. В [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) зарегистрировать `SPOTIFY_REDIRECT_URI` **посимвольно** (включая протокол и путь).
+4. Поднять стек:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+5. Поставить reverse proxy (nginx/Caddy) перед `web:8080` с HTTPS-терминацией.
+6. В production пересоберите `web` с правильным `VITE_API_BASE_URL` (значение запекается в бандл):
+
+   ```yaml
+   web:
+     build:
+       args:
+         VITE_API_BASE_URL: https://api.your-domain.com
+   ```
+
+**Безопасность**
+
+- `.env` и каталог `data/` — права только пользователю сервиса, не world-readable.
+- Секреты не должны попадать в логи (`provider_logging.redact_secrets_in_text` маскирует `access_token` / `refresh_token` / `Authorization` / `code`).
+- Не коммитьте `.env` и `*.db` (см. `.gitignore`).
+
+---
+
+## Roadmap
+
+> Все пункты помечены как **планируется**.
+
+- [ ] Web Playback SDK (для Spotify Premium) поверх текущего deep link.
+- [ ] SSE / WebSocket для real-time статуса пайплайна (вместо polling по `GET /messages/{msg_id}`).
+- [ ] Контрактные тесты DTO frontend ↔ backend.
+- [ ] E2E smoke браузерного сценария: вход → чат → генерация → сохранение порядка.
+- [ ] Production-деплой с HTTPS и автоматическими бэкапами тома `conce_data`.
+
+---
+
+## Вклад в проект
+
+1. Создайте ветку от `develop`:
+
+   ```bash
+   git checkout -b feature/your-feature develop
+   ```
+
+2. Перед PR пройдите все quality gates локально:
+
+   ```bash
+   # Backend
+   python -m ruff check src tests scripts
+   python -m pytest
+   python scripts/smoke_llm_pipeline.py
+
+   # Frontend
+   cd frontend && npm run lint && npm run smoke
+   ```
+
+3. Откройте PR в `develop`. CI (`.github/workflows/quality-gates.yml`) должен быть зелёным.
+
+**Стиль коммитов:** `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
+
+**Секреты:** не коммитьте `.env`, реальные ключи и `*.db`-файлы — они в `.gitignore`.
+
+---
+
+## Лицензия
+
+Файл лицензии: LICENSE (GPL v3.0). Внешние зависимости имеют собственные условия использования: [Spotify Developer Terms](https://developer.spotify.com/terms), условия Yandex Cloud для выбранной модели YandexGPT.
+
+---
+
+## Troubleshooting
+
+### 1. `uvicorn` не находит модуль `app`
+
+`pip install -e .` ставит проект как пакет `concert-playlist-llm`, но **не** регистрирует `app` / `llm` / `optimizer` / `spotify` как top-level модули. Установите `PYTHONPATH=src`:
+
+```bash
+# Linux / macOS
+PYTHONPATH=src uvicorn app.main:app --reload
+```
+
+```powershell
+# Windows (PowerShell)
+$env:PYTHONPATH = "src"
+uvicorn app.main:app --reload
+```
+
+### 2. Бэкенд работает в mock, хотя ключи заданы
+
+Проверьте `GET /api/v1/providers/status`. При `PROVIDER_MODE=auto` для реального режима нужны:
+
+- `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI` — все непустые;
+- `YANDEX_MODEL_URI` **или** пара `YANDEX_FOLDER_ID` + `YANDEX_MODEL_ID`;
+- одно из: `YANDEX_API_KEY` **или** `YANDEX_IAM_TOKEN`.
+
+Если хотя бы одно условие нарушено — бэкенд тихо переключается в `mock_fallback`.
+
+### 3. Spotify OAuth: `INVALID_CLIENT: Invalid redirect URI`
+
+`SPOTIFY_REDIRECT_URI` в `.env` должен совпадать с URI в Spotify Dashboard **посимвольно**. Частые ошибки:
+
+- `localhost` vs `127.0.0.1` (это разные URI);
+- `http://` vs `https://`;
+- лишний `/` в конце;
+- порт 8000 vs 8080.
+
+### 4. `alembic upgrade head` падает — нет директории / БД
+
+По умолчанию `DB_PATH=data/sqlite.db`. Создайте директорию вручную:
+
+```bash
+mkdir -p data
+```
+
+```powershell
+New-Item -ItemType Directory -Force data
+```
+
+В Docker `data/` маппится на том `conce_data` и создаётся автоматически.
+
+### 5. Windows: команда `set PYTHONPATH=src` не работает в PowerShell
+
+`set` — это синтаксис `cmd.exe`. В PowerShell используйте `$env:PYTHONPATH = "src"`.
+
+### 6. Windows: проблемы с CRLF при сборке Docker
+
+`Dockerfile.api` использует inline-entrypoint (`/bin/sh -c "..."`), чтобы избежать CRLF-проблем. Если вы добавили свои `*.sh`-скрипты в образ, убедитесь, что они сохранены с LF (`git config core.autocrlf input` или `.gitattributes` с `* text=auto eol=lf`).
+
+### 7. Docker: при сборке `web` ошибка `npm ci` или `package-lock.json out of sync`
+
+Пересоберите lock-файл и образ:
+
+```bash
+cd frontend && npm install && cd ..
+docker compose build --no-cache web
+```
+
+### 8. Frontend в браузере открывается, API возвращает 404 / CORS
+
+- В **dev**: оба процесса должны работать одновременно (`uvicorn` на 8000, Vite на 5174). Vite проксирует `/api` на `127.0.0.1:8000` (`frontend/vite.config.ts`).
+- В **Docker-сборке**: `VITE_API_BASE_URL` запечён в бандл на этапе `docker compose build`. Если URL изменился — `docker compose build --no-cache web`.
+- CORS-список для backend задан в `src/app/main.py` (5173, 5174, 8080 + `FRONTEND_PUBLIC_URL`). Под другой домен/порт добавьте его туда.
+
+### 9. LLM-запросы завершаются таймаутом
+
+Поднимите `LLM_TIMEOUT_SECONDS` (по умолчанию 45). Проверьте сетевую доступность `YANDEX_COMPLETION_URL` с хоста. Для офлайн-разработки используйте `PROVIDER_MODE=mock`.
+
+### 10. Spotify `/search` возвращает 400 «Invalid limit»
+
+Часто причина — некорректный `SPOTIFY_MARKET` (например, число вместо ISO-кода). Используйте корректный код alpha-2 (`US`, `GB`, `RU`) или оставьте пустым.
+
+### 11. macOS: предупреждение про `cryptography` при запуске
+
+Шифрование refresh-токенов реализовано **без библиотеки `cryptography`** (`src/app/core/security.py` использует SHA-256 + XOR). Если ваша среда подтягивает её транзитивно (например, через старый `pip install`) и ругается на ABI — обновите Python и pip.
+
+### 12. SQLite: `database is locked` под нагрузкой
+
+SQLite используется в WAL-режиме (`src/app/db/session.py`), но это всё ещё один файл на запись. Долгие миграции и параллельные write-операции могут конфликтовать. Для production-нагрузки нужно вынести БД на Postgres — **планируется**.
+
+---
+
+## FAQ
+
+**Можно ли запустить без аккаунта Spotify и Yandex Cloud?**
+Да. Оставьте `SPOTIFY_*` и `YANDEX_*` пустыми и держите `PROVIDER_MODE=auto` (или явно `mock`) — пайплайн отработает на детерминированных mock-данных.
+
+**Как проверить, что я в реальном режиме?**
+`GET /api/v1/providers/status` → `ui_data_source: "real_providers"`. Если `mock_fallback` — посмотрите, какие из полей `yandex_configured` / `spotify_oauth_configured` равны `false`.
+
+**Какая база нужна — Postgres / MySQL?**
+Сейчас только SQLite (`SQLAlchemy 2`, файл из `DB_PATH`). Адаптация под Postgres **не реализована**.
+
+**Где живут токены пользователя?**
+В таблице `users` (`src/app/db/models.py`). Spotify refresh-токены шифруются (XOR + SHA-256-производный ключ из `CRYPTO_KEY`) — `src/app/core/security.py`. JWT для фронта подписывается `JWT_SECRET` (HS256 по умолчанию).
+
+**Почему фронт использует `HashRouter`, а не `BrowserRouter`?**
+Чтобы SPA на nginx (`docker/nginx-web.conf`) и при подсовывании за reverse proxy работала без серверных rewrite-правил. URL вида `https://host/#/chat/123` отправляются на сервер как `/`.
+
+**Можно ли использовать модель LLM, отличную от YandexGPT?**
+Транспорты разделены (`src/llm/yandex_transport.py`, `src/llm/mock_transport.py`, фабрика — `transport_factory.py`). Чтобы подключить, например, OpenAI, нужно реализовать новый транспорт с тем же интерфейсом и расширить `transport_factory`. Готового адаптера в коде нет.
+
+**Почему `POST /messages` возвращает 202, а не 200?**
+Пайплайн (LLM-парсинг намерения → теги по N трекам → отжиг) — асинхронный по своей природе. Фронт получает `202` и polling-ит `GET /chats/{id}/messages/{msg_id}` до `done`/`error`.
+
+**Где настраивать CORS?**
+`src/app/main.py` — список `_cors_origins`. По умолчанию разрешены `127.0.0.1` и `localhost` на портах 5173, 5174, 8080 + `FRONTEND_PUBLIC_URL`.
+
+**Что считается «версией концерта»?**
+Каждая успешная генерация в чате создаёт новую запись в таблице `concerts`. Текущая отдаётся `GET /chats/{id}/concert`, история — `GET /chats/{id}/concerts`.
+
+**Как сбросить локальную БД?**
+Удалите `data/sqlite.db` и `data/llm_cache.db` и заново выполните `alembic upgrade head`. В Docker — `docker compose down -v`.
+
+---
